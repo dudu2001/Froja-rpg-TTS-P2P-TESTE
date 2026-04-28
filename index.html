@@ -4,8 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Escudo do Mestre - FORJA RPG</title>
-    <!-- Tailwind CDN removed: only 7 utility classes used, inlined below -->
-    <style>
+    <!-- Tailwind CDN removed: only 7 utility classes used, inlined below --><style>
       .hidden{display:none!important}
       .w-full{width:100%}
       .text-sm{font-size:.875rem;line-height:1.25rem}
@@ -13,7 +12,81 @@
       .text-white{color:#fff}
       .font-semibold{font-weight:600}
       .font-bold{font-weight:700}
-    </style>
+    
+        /* === PAINEL ONLINE === */
+        #onlinePanel {
+            position: fixed;
+            top: 0.5rem;
+            left: calc(50% - 20vw);
+            transform: translateX(-50%);
+            background: rgba(13,17,23,0.92);
+            border: 1px solid var(--border);
+            border-radius: 9999px;
+            padding: 0.25rem 0.75rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            z-index: 150;
+            display: none;
+            gap: 0.5rem;
+            align-items: center;
+            backdrop-filter: blur(8px);
+            cursor: pointer;
+            max-width: 90vw;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            transition: background 0.15s;
+        }
+        #onlinePanel.visible { display: flex; }
+        #onlinePanel:hover { background: rgba(30,40,60,0.97); border-color: var(--accent); }
+        #onlinePanel .peer-dot {
+            width: 0.5rem; height: 0.5rem;
+            border-radius: 50%;
+            background: var(--success);
+            animation: pulseDot 2s infinite;
+            flex-shrink: 0;
+        }
+
+        /* Dropdown lista de jogadores */
+        #onlineListDropdown {
+            position: fixed;
+            top: 2.4rem;
+            left: calc(50% - 20vw);
+            transform: translateX(-50%);
+            background: rgba(10,15,26,0.98);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 0.75rem;
+            padding: 0.5rem;
+            z-index: 151;
+            min-width: 200px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+            backdrop-filter: blur(16px);
+            display: none;
+        }
+        #onlineListDropdown.open { display: block; }
+        .online-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.35rem 0.6rem;
+            border-radius: 0.5rem;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+        .online-item .online-dot {
+            width: 0.45rem; height: 0.45rem;
+            border-radius: 50%;
+            background: var(--success);
+            flex-shrink: 0;
+        }
+        .online-item .online-role {
+            font-size: 0.68rem;
+            color: var(--text-muted);
+            margin-left: auto;
+        }
+        .online-item.is-me { color: var(--text-primary); font-weight: 600; }
+</style>
     <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -88,7 +161,9 @@
         }
         .btn:hover { background-color: var(--accent-dark); box-shadow: 0 2px 8px var(--accent-glow); }
         .btn:active { transform: scale(0.97); }
-        .btn.active-tool {
+        .btn#wallEraserBtn.wall-eraser-active{opacity:1!important;background:rgba(239,68,68,0.22);color:#fca5a5;border-color:rgba(239,68,68,0.55);box-shadow:0 0 0 2px rgba(239,68,68,0.22);}
+.btn#wallBtn.wall-active{opacity:1!important;background:rgba(239,68,68,0.22);color:#fca5a5;border-color:rgba(239,68,68,0.55);box-shadow:0 0 0 2px rgba(239,68,68,0.22);}
+.active-tool {
             background-color: var(--accent-dark);
             box-shadow: 0 0 0 2px white, 0 0 0 4px var(--accent);
         }
@@ -130,6 +205,29 @@
             box-shadow: 4px 0 24px rgba(0,0,0,0.3);
         }
         .sidebar.collapsed { transform: translateX(calc(-1 * var(--sidebar-w))); box-shadow: none; }
+        /* === SCROLL FADE INDICATOR === */
+        .scroll-fade-wrap {
+            position: relative;
+            flex: 1;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+        .scroll-fade-wrap::after {
+            content: '';
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            height: 2.75rem;
+            background: linear-gradient(to bottom, transparent, rgba(22,32,46,0.95));
+            pointer-events: none;
+            transition: opacity 0.25s;
+            z-index: 2;
+        }
+        .scroll-fade-wrap.at-bottom::after { opacity: 0; }
+        .scroll-fade-wrap .sidebar-body,
+        .scroll-fade-wrap .panel-body { flex: 1; min-height: 0; }
+
         .sidebar-header {
             padding: 0.875rem 1rem;
             border-bottom: 1px solid rgba(255,255,255,0.06);
@@ -142,12 +240,17 @@
         .sidebar-body {
             flex: 1;
             overflow-y: auto;
+            overflow-x: hidden;
             padding: 0.875rem;
             scrollbar-width: thin;
-            scrollbar-color: rgba(255,255,255,0.1) transparent;
+            scrollbar-color: rgba(59,130,246,0.4) transparent;
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior: contain;
         }
-        .sidebar-body::-webkit-scrollbar { width: 3px; }
-        .sidebar-body::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+        .sidebar-body::-webkit-scrollbar { width: 5px; }
+        .sidebar-body::-webkit-scrollbar-track { background: rgba(255,255,255,0.03); border-radius: 3px; }
+        .sidebar-body::-webkit-scrollbar-thumb { background: rgba(59,130,246,0.4); border-radius: 3px; }
+        .sidebar-body::-webkit-scrollbar-thumb:hover { background: rgba(59,130,246,0.65); }
 
         /* === RIGHT PANEL === */
         #npcDetailPanel {
@@ -178,12 +281,17 @@
         .panel-body {
             flex: 1;
             overflow-y: auto;
+            overflow-x: hidden;
             padding: 0.875rem;
             scrollbar-width: thin;
-            scrollbar-color: rgba(255,255,255,0.1) transparent;
+            scrollbar-color: rgba(59,130,246,0.4) transparent;
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior: contain;
         }
-        .panel-body::-webkit-scrollbar { width: 3px; }
-        .panel-body::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+        .panel-body::-webkit-scrollbar { width: 5px; }
+        .panel-body::-webkit-scrollbar-track { background: rgba(255,255,255,0.03); border-radius: 3px; }
+        .panel-body::-webkit-scrollbar-thumb { background: rgba(59,130,246,0.4); border-radius: 3px; }
+        .panel-body::-webkit-scrollbar-thumb:hover { background: rgba(59,130,246,0.65); }
 
         /* === CANVAS AREA === */
         .central-content {
@@ -208,6 +316,7 @@
         #gameCanvas.cur-grab { cursor: grab; }
         #gameCanvas.cur-grabbing { cursor: grabbing; }
         #gameCanvas.cur-crosshair { cursor: crosshair; }
+        #gameCanvas.cur-pan { cursor: all-scroll; }
 
         /* === TOGGLE SIDEBAR BUTTONS === */
         .toggle-sidebar-btn {
@@ -245,6 +354,52 @@
             background: var(--accent);
             color: white;
             border-color: var(--accent);
+        }
+
+
+        /* === TOOLS DRAWER === */
+        #toolsDrawerBtn {
+            position: fixed;
+            bottom: 1.25rem;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 11;
+            background: linear-gradient(135deg,#0f766e,#2563eb);
+            border: 1px solid rgba(103,232,249,0.3);
+            color: white;
+            font-weight: 800;
+            letter-spacing: 0.07em;
+            text-transform: uppercase;
+            padding: 0.45rem 1rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.4), 0 0 14px rgba(37,99,235,0.2);
+            transition: background 0.15s, bottom 0.2s ease, right 0.2s ease, left 0.2s ease, transform 0.2s ease, padding 0.15s, font-size 0.15s, box-shadow 0.15s;
+            white-space: nowrap;
+        }
+        #toolsDrawerBtn:hover {
+            background: linear-gradient(135deg,#0f8a80,#3b82f6);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.4), 0 0 18px rgba(37,99,235,0.35);
+        }
+        /* Quando aberto: botão fica no canto direito acima da barra e vira seta pequena */
+        #toolsDrawerBtn.open {
+            bottom: 4.6rem;
+            left: auto;
+            right: calc(50% - 260px); /* alinha com borda direita da barra */
+            transform: none;
+            padding: 0.3rem 0.55rem;
+            font-size: 0.85rem;
+            letter-spacing: 0;
+            border-radius: 0.5rem 0.5rem 0 0;
+            border-bottom: none;
+        }
+        .map-controls-overlay.tools-collapsed {
+            opacity: 0;
+            pointer-events: none;
+            transform: translateX(-50%) translateY(14px) scale(0.98);
+        }
+        .map-controls-overlay {
+            transition: opacity 0.18s ease, transform 0.2s ease;
         }
 
         /* === MAP CONTROLS OVERLAY === */
@@ -317,11 +472,19 @@
             border: 1px solid rgba(255,255,255,0.08);
             border-radius: 0.75rem;
             min-width: 190px;
+            max-height: 80vh;
+            overflow-y: auto;
+            overflow-x: hidden;
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior: contain;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(59,130,246,0.3) transparent;
             box-shadow: 0 12px 40px rgba(0,0,0,0.6), 0 0 0 1px rgba(59,130,246,0.05);
             z-index: 200;
-            overflow: hidden;
             display: none;
         }
+        #saveDropdown::-webkit-scrollbar { width: 4px; }
+        #saveDropdown::-webkit-scrollbar-thumb { background: rgba(59,130,246,0.3); border-radius: 2px; }
         #saveDropdown.open { display: block; animation: fadeInDown 0.12s ease; }
         @keyframes fadeInDown {
             from { opacity:0; transform:translateY(-6px); }
@@ -562,9 +725,20 @@
             box-shadow: 0 24px 64px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.06);
             max-width: 480px;
             width: 90%;
+            max-height: 88vh;
+            overflow-y: auto;
+            overflow-x: hidden;
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior: contain;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(59,130,246,0.4) transparent;
             color: var(--text-secondary);
             border: 1px solid rgba(255,255,255,0.07);
         }
+        .custom-modal-content::-webkit-scrollbar { width: 5px; }
+        .custom-modal-content::-webkit-scrollbar-track { background: rgba(255,255,255,0.03); border-radius: 3px; }
+        .custom-modal-content::-webkit-scrollbar-thumb { background: rgba(59,130,246,0.4); border-radius: 3px; }
+        .custom-modal-content::-webkit-scrollbar-thumb:hover { background: rgba(59,130,246,0.65); }
         .custom-modal-buttons { display:flex; justify-content:center; gap:0.75rem; margin-top:1.5rem; }
 
         /* === MAIN SCREEN === */
@@ -607,6 +781,21 @@
             cursor: pointer;
         }
         .npc-list-item:hover { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.08); }
+        .npc-focus-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 0.85rem;
+            padding: 0 0.15rem;
+            flex-shrink: 0;
+            line-height: 1;
+            opacity: 0.5;
+            transition: opacity 0.15s, color 0.15s;
+            border-radius: 0.25rem;
+        }
+        .npc-focus-btn:hover { opacity: 1; color: #60a5fa; }
+        .npc-focus-btn.no-token { opacity: 0.2; cursor: default; }
         .npc-list-item.selected { border-color: rgba(59,130,246,0.5); background: rgba(59,130,246,0.08); }
         .npc-name-btn {
             flex: 1;
@@ -759,10 +948,19 @@
             border-radius: 0.75rem;
             padding: 0.5rem 0.75rem;
             display: flex;
+            flex-direction: row;
             gap: 0.5rem;
             align-items: center;
             z-index: 20;
             box-shadow: 0 4px 16px var(--accent-glow);
+            transition: top 0.12s ease, left 0.12s ease;
+            min-width: 280px;
+            max-width: 420px;
+        }
+        #tokenMapControls .token-controls-row {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
         }
         #tokenMapControls.hidden { display: none; }
 
@@ -897,17 +1095,6 @@
             flex-shrink: 0;
         }
 
-        /* === PLAYER MODE RESTRICTIONS === */
-        body.player-mode .master-only { display: none !important; }
-        .npc-list-item.player-locked { opacity: 0.5; }
-        .npc-list-item.player-locked .npc-name-btn { cursor: not-allowed; pointer-events: none; }
-        .player-readonly-notice {
-            display: flex; align-items: center; gap: 0.4rem;
-            background: rgba(245,158,11,0.10); border: 1px solid rgba(245,158,11,0.25);
-            border-radius: 0.5rem; padding: 0.45rem 0.7rem;
-            font-size: 0.78rem; color: #fbbf24; margin-bottom: 0.75rem;
-        }
-
         /* Peer counter badge */
         #peerCounterBadge {
             position: fixed;
@@ -941,7 +1128,32 @@
             0%, 100% { opacity: 1; }
             50% { opacity: 0.3; }
         }
-    </style>
+    
+        /* === BOTÃO VOLTAR — canto superior esquerdo, fixo === */
+        #backToMainBtn {
+            position: fixed;
+            top: 0.5rem;
+            left: 0.5rem;
+            z-index: 200;
+            background: rgba(13,17,23,0.82);
+            backdrop-filter: blur(6px);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 0.5rem;
+            color: var(--text-muted);
+            font-size: 0.72rem;
+            font-weight: 600;
+            padding: 0.35rem 0.65rem;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: background 0.15s, color 0.15s, border-color 0.15s;
+            line-height: 1.4;
+        }
+        #backToMainBtn:hover {
+            background: var(--danger);
+            color: white;
+            border-color: var(--danger);
+        }
+</style>
 </head>
 <body>
 
@@ -949,8 +1161,9 @@
 <div id="mainScreen">
     <div class="main-card">
         <div>
-            <h1 class="title-font">⚔️ Escudo do Mestre</h1>
-            <p>Gerencie seus NPCs e batalhas de RPG de forma intuitiva.</p>
+            <h1 class="title-font">⚔️ Seu VTT</h1>
+            <p>Crie seu próprio VTT online em qualquer dispositivo.</p>
+            <p style="font-size:0.8rem;color:var(--text-muted);margin-top:0.25rem;letter-spacing:0.03em;">Por: <strong style="color:var(--accent);">ForjaRPG</strong> &amp; <strong style="color:var(--accent);">Time Ferraria RPG</strong></p>
         </div>
         <button id="createNewMapBtn" class="btn">🗺️ Criar Novo Mapa</button>
         <input type="file" id="mainLoadMapInput" accept=".json" class="hidden">
@@ -965,6 +1178,13 @@
     <div class="lobby-card">
         <h2 class="title-font">🌐 Sessão Multijogador</h2>
         <p class="lobby-subtitle">Jogue com seus amigos em tempo real via P2P</p>
+        <!-- Nick do jogador -->
+        <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.75rem;background:rgba(59,130,246,0.07);border:1px solid rgba(59,130,246,0.18);border-radius:0.75rem;padding:0.6rem 0.875rem;">
+            <span style="font-size:0.8rem;color:var(--text-muted);white-space:nowrap;">👤 Seu nick:</span>
+            <input type="text" id="myNickInput" class="input-base" placeholder="Seu nome na sessão"
+                style="flex:1;background:rgba(255,255,255,0.05);"
+                maxlength="24" autocomplete="off" spellcheck="false">
+        </div>
 
         <!-- HOST SECTION -->
         <div class="lobby-section">
@@ -1012,15 +1232,11 @@
 </div>
 
 <!-- Peer counter badge (shown while in-game) -->
-<div id="peerCounterBadge">
+<div id="onlinePanel">
     <span class="peer-dot"></span>
-    <span id="peerCounterText">1 jogador</span>
-    <span style="color:var(--border-light);">|</span>
-    <span id="peerRoleText" style="color:var(--accent);">Mestre</span>
+    <span id="onlinePanelText">1 online</span>
 </div>
-
-<!-- Player mode badge -->
-<div id="playerModeBadge" style="display:none;position:fixed;bottom:5.5rem;right:0.875rem;background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.35);border-radius:9999px;padding:0.3rem 0.875rem;font-size:0.72rem;font-weight:700;color:#6ee7b7;z-index:50;backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.04em;">🛡️ MODO JOGADOR — só aliados</div>
+<div id="onlineListDropdown"></div>
 
 <!-- FoW active badge -->
 <div id="fowBadge" class="fow-badge">👁️ NÉVOA ATIVA</div>
@@ -1031,12 +1247,13 @@
     <!-- LEFT SIDEBAR -->
     <aside id="npcSidebar" class="sidebar">
         <div class="sidebar-header">
-            <button id="backToMainBtn" class="btn btn-ghost btn-sm">← Voltar</button>
-            <span class="title-font text-sm font-bold text-white" style="margin-left:auto;letter-spacing:0.05em;opacity:0.9;">NPCs</span>
+            <span class="title-font text-sm font-bold text-white" style="margin:0 auto;letter-spacing:0.05em;opacity:0.9;">NPCs</span>
         </div>
-        <div class="sidebar-body">
-            <button id="newNpcBtn" class="btn master-only w-full mb-3" style="justify-content:center;background:linear-gradient(135deg,rgba(59,130,246,0.8),rgba(37,99,235,0.9));border:1px solid rgba(59,130,246,0.3);box-shadow:0 4px 12px rgba(59,130,246,0.2);">＋ Novo NPC</button>
-            <div id="npcList"></div>
+        <div class="scroll-fade-wrap" id="npcScrollWrap">
+            <div class="sidebar-body" id="npcScrollBody">
+                <button id="newNpcBtn" class="btn w-full mb-3" style="justify-content:center;background:linear-gradient(135deg,rgba(59,130,246,0.8),rgba(37,99,235,0.9));border:1px solid rgba(59,130,246,0.3);box-shadow:0 4px 12px rgba(59,130,246,0.2);">＋ Novo NPC</button>
+                <div id="npcList"></div>
+            </div>
         </div>
 
         <!-- Initiative Tracker -->
@@ -1055,6 +1272,7 @@
 
     <!-- TOGGLE LEFT -->
     <button id="toggleNpcListBtn" class="toggle-sidebar-btn">◀</button>
+    <button id="backToMainBtn">← Sair</button>
 
     <!-- CENTRAL CANVAS -->
     <main class="central-content">
@@ -1064,10 +1282,10 @@
 
         <!-- Header action buttons — horizontal strip top-right -->
         <div class="header-action-buttons">
-            <button id="mapSettingsBtn" class="btn btn-ghost btn-sm master-only" style="font-size:0.8rem;" title="Configurações do Mapa">⚙️ Config</button>
+            <button id="mapSettingsBtn" class="btn btn-ghost btn-sm" style="font-size:0.8rem;" title="Configurações do Mapa">⚙️ Config</button>
 
             <!-- Save / Load dropdown -->
-            <div class="save-dropdown-wrap master-only">
+            <div class="save-dropdown-wrap">
                 <button id="saveDropdownBtn" class="btn btn-sm" style="font-size:0.8rem;" title="Salvar / Carregar">💾 Salvar ▾</button>
                 <div id="saveDropdown">
                     <button class="save-dropdown-item" id="saveMapFileBtn">💾 Salvar arquivo (.json)</button>
@@ -1087,7 +1305,7 @@
         <div id="canvasContainer">
             <canvas id="gameCanvas"></canvas>
             <!-- WebGL dynamic lighting layer (multiply blend) -->
-            <canvas id="lightingCanvas" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;mix-blend-mode:multiply;display:none;"></canvas>
+            <canvas id="lightingCanvas" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;display:none;opacity:0;"></canvas>
 
             <!-- Status badges -->
             <div id="lightBadge">💡 ILUMINAÇÃO ATIVA</div>
@@ -1098,15 +1316,18 @@
 
             <!-- Token Controls -->
             <div id="tokenMapControls" class="hidden">
-                <span id="selectedTokenLabel" style="font-size:0.8125rem;font-weight:600;color:var(--text-primary);"></span>
-                <div class="controls-divider" style="height:1.25rem;"></div>
-                <button id="editTokenHpBtn" class="btn btn-sm" data-tip="Editar HP">❤️ HP</button>
-                <button id="clearSelectionBtn" class="btn btn-ghost btn-sm">✕ Desselecionar</button>
-                <button id="deleteSelectedTokenBtn" class="btn btn-danger btn-sm">🗑 Remover</button>
+                <div class="token-controls-row">
+                    <span id="selectedTokenLabel" style="font-size:0.8125rem;font-weight:600;color:var(--text-primary);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
+                    <div class="controls-divider" style="height:1.25rem;"></div>
+                    <button id="editTokenHpBtn" class="btn btn-sm" data-tip="Editar HP">❤️ HP</button>
+                    <button id="clearSelectionBtn" class="btn btn-ghost btn-sm">✕</button>
+                    <button id="deleteSelectedTokenBtn" class="btn btn-danger btn-sm">🗑</button>
+                </div>
             </div>
 
             <!-- Map Controls Overlay -->
-            <div class="map-controls-overlay">
+            <button id="toolsDrawerBtn" class="btn">⚒ FERRAMENTAS</button>
+        <div id="mapControlsOverlay" class="map-controls-overlay tools-collapsed">
                 <!-- Zoom -->
                 <button id="zoomInBtn" class="btn btn-icon" data-tip="Zoom In (+)">+</button>
                 <span id="zoomDisplay">100%</span>
@@ -1116,11 +1337,16 @@
                 <div class="controls-divider"></div>
 
                 <!-- Tools -->
-                <button id="moveToolBtn" class="btn btn-icon active-tool" data-tip="Mover (M)">✥</button>
+                <button id="moveToolBtn" class="btn btn-icon active-tool" data-tip="Mover NPCs (M)">✥</button>
+                <button id="panToolBtn" class="btn btn-icon" data-tip="Mover Câmera (P)">🖐️</button>
                 <button id="rulerBtn" class="btn btn-icon" data-tip="Régua Linha (R)">📏</button>
                 <button id="coneBtn" class="btn btn-icon" data-tip="Régua Cone (C)">🔺</button>
                 <button id="drawLineBtn" class="btn btn-icon" data-tip="Desenhar (D)">✏️</button>
                 <button id="eraserBtn" class="btn btn-icon" data-tip="Borracha (E)">🧹</button>
+                <button id="wallBtn" class="btn btn-icon" data-tip="Parede (W) · só GM" style="display:none;font-size:0.72rem;">🧱</button>
+                <button id="wallEraserBtn" class="btn btn-icon" data-tip="Apagar Parede · só GM" style="display:none;font-size:0.65rem;letter-spacing:-0.02em;">🧱✕</button>
+
+
                 <input type="color" id="drawColorInput" value="#ef4444"
                     style="width:1.75rem;height:1.75rem;border-radius:50%;border:2px solid rgba(255,255,255,0.4);cursor:pointer;padding:0;background:none;flex-shrink:0;"
                     data-tip="Cor do Desenho">
@@ -1144,13 +1370,13 @@
                 <div class="controls-divider"></div>
 
                 <!-- Danger actions -->
-                <button id="clearCanvasBtn" class="btn btn-danger btn-sm master-only" data-tip="Limpar Mapa">🗑 Mapa</button>
-                <button id="clearDrawingsBtn" class="btn btn-danger btn-icon master-only" data-tip="Limpar Desenhos">✂</button>
+                <button id="clearCanvasBtn" class="btn btn-danger btn-sm" data-tip="Limpar Mapa">🗑 Mapa</button>
+                <button id="clearDrawingsBtn" class="btn btn-danger btn-icon" data-tip="Limpar Desenhos">✂</button>
 
                 <div class="controls-divider"></div>
 
                 <!-- Névoa & Iluminação panel toggle -->
-                <button id="envPanelBtn" class="btn btn-icon btn-env master-only" title="Névoa & Iluminação (F)">🌑</button>
+                <button id="envPanelBtn" class="btn btn-icon btn-env" title="Névoa & Iluminação (F)">🌑</button>
             </div>
         </div>
 
@@ -1160,8 +1386,8 @@
         <div id="envPanel">
             <div class="env-panel-header">
                 <div class="env-tabs">
-                    <button class="env-tab active" data-tab="fog">🌫️ Névoa de Guerra</button>
-                    <button class="env-tab" data-tab="light">💡 Iluminação Dinâmica</button>
+                    <button class="env-tab active" data-tab="fog" id="envTabFog">🌫️ Névoa de Guerra</button>
+                    <button class="env-tab" data-tab="light" id="envTabLight">💡 Iluminação Dinâmica</button>
                 </div>
                 <button id="envPanelClose" title="Fechar">✕</button>
             </div>
@@ -1244,7 +1470,10 @@
                     <div class="env-card" id="glManualLightsCard" style="display:none;">
                         <div class="env-card-title" style="display:flex;align-items:center;justify-content:space-between;">
                             <span>Fontes Manuais</span>
-                            <button id="addManualLightBtn" class="btn btn-sm" style="font-size:0.68rem;padding:0.15rem 0.5rem;background:rgba(251,191,36,0.2);border:1px solid rgba(251,191,36,0.3);color:#fde68a;">+ Adicionar</button>
+                            <div style="display:flex;gap:0.3rem;align-items:center;">
+                                <button id="toggleLightIconsBtn" class="btn btn-sm" style="font-size:0.68rem;padding:0.15rem 0.4rem;background:rgba(251,191,36,0.12);border:1px solid rgba(251,191,36,0.25);color:#fde68a;" title="Mostrar/ocultar ícones de luz no mapa">👁️ Ícones</button>
+                                <button id="addManualLightBtn" class="btn btn-sm" style="font-size:0.68rem;padding:0.15rem 0.5rem;background:rgba(251,191,36,0.2);border:1px solid rgba(251,191,36,0.3);color:#fde68a;">+ Adicionar</button>
+                            </div>
                         </div>
                         <div id="manualLightList"></div>
                         <p style="font-size:0.68rem;color:var(--text-muted);margin-top:0.35rem;">💡 Clique em uma célula com a ferramenta ativa para posicionar.</p>
@@ -1263,7 +1492,8 @@
                 <span class="title-font text-sm font-bold text-white" style="letter-spacing:0.05em;opacity:0.9;">Ficha do NPC</span>
             </div>
         </div>
-        <div class="panel-body">
+        <div class="scroll-fade-wrap" id="npcDetailScrollWrap">
+            <div class="panel-body" id="npcDetailScrollBody">
             <div id="npcEmptyState" style="text-align:center;padding:2.5rem 1rem;color:var(--text-muted);">
                 <p style="font-size:2rem;margin-bottom:0.75rem;opacity:0.4;">👤</p>
                 <p style="font-size:0.8125rem;line-height:1.5;opacity:0.6;">Selecione um NPC na lista<br>ou crie um novo para começar.</p>
@@ -1312,7 +1542,19 @@
                 </div>
                 <div class="field-group">
                     <label class="field-label" for="npcVisionRadius">👁️ Raio de Visão (quadrados)</label>
-                    <input type="number" id="npcVisionRadius" class="input-base" min="0" max="30" value="6" placeholder="0 = sem visão própria">
+                    <div style="display:flex;gap:0.5rem;align-items:center;">
+                        <input type="range" id="npcVisionRadius" min="0" max="50" step="1" value="6" style="flex:1;accent-color:var(--accent);cursor:pointer;">
+                        <span id="npcVisionRadiusLabel" style="font-size:0.8125rem;color:var(--text-muted);min-width:2.5rem;text-align:right;">6</span>
+                    </div>
+                    <span style="font-size:0.75rem;color:var(--text-muted);">0 = sem visão própria</span>
+                </div>
+                <div class="field-group">
+                    <label class="field-label" for="npcVisionConeAngle">🔺 Ângulo do Cone de Visão</label>
+                    <div style="display:flex;gap:0.5rem;align-items:center;">
+                        <input type="range" id="npcVisionConeAngle" min="10" max="360" step="5" value="65" style="flex:1;accent-color:var(--accent);cursor:pointer;">
+                        <span id="npcVisionConeAngleLabel" style="font-size:0.8125rem;color:var(--text-muted);min-width:3rem;text-align:right;">65°</span>
+                    </div>
+                    <span style="font-size:0.75rem;color:var(--text-muted);">360° = visão circular completa</span>
                 </div>
                 <div class="field-group" style="background:rgba(251,191,36,0.05);border:1px solid rgba(251,191,36,0.15);border-radius:0.625rem;padding:0.6rem;">
                     <div class="env-card-title" style="color:rgba(251,191,36,0.7);margin-bottom:0.4rem;">💡 Emissão de Luz</div>
@@ -1352,12 +1594,14 @@
                     <label class="field-label" style="margin:0;flex-shrink:0;">Status:</label>
                     <button id="toggleEnemyBtn" class="btn btn-sm npc-tag ally">ALIADO</button>
                 </div>
+                
                 <hr class="section-divider">
                 <div style="display:flex;flex-direction:column;gap:0.4rem;">
                     <button id="saveNpcBtn" class="btn" style="justify-content:center;">💾 Salvar NPC</button>
                     <button id="addTokenBtn" class="btn btn-success" style="justify-content:center;">🎯 Adicionar ao Mapa</button>
                     <button id="addToInitiativeBtn" class="btn btn-ghost" style="justify-content:center;">⚡ Adicionar à Iniciativa</button>
                 </div>
+            </div>
             </div>
         </div>
     </div>
@@ -1440,7 +1684,7 @@
                     <label class="field-label">Unidade</label>
                     <select id="unitSystemInput" class="input-base select-base">
                         <option value="squares">Quadrados</option>
-                        <option value="meters">Metros (m)</option>
+                        <option value="meters" selected>Metros (m)</option>
                         <option value="feet">Pés (ft)</option>
                     </select>
                 </div>
@@ -1476,6 +1720,15 @@
         </div>
 
         <div class="field-group">
+            <label class="field-label">Opacidade do Grid</label>
+            <div style="display:flex;gap:0.5rem;align-items:center;">
+                <input type="range" id="gridOpacityInput" min="0" max="100" value="100" style="flex:1;accent-color:var(--accent);cursor:pointer;">
+                <span id="gridOpacityValue" style="font-size:0.8125rem;color:var(--text-muted);min-width:2.8rem;text-align:right;">100%</span>
+            </div>
+            <span style="font-size:0.75rem;color:var(--text-muted);">0% = invisível · 100% = sólido</span>
+        </div>
+
+        <div class="field-group">
             <label class="field-label">Imagem de Fundo</label>
             <input type="file" id="mapBackgroundInput" accept="image/*" class="hidden">
             <button id="uploadMapBackgroundBtn" class="btn btn-ghost" style="justify-content:center;width:100%;">🖼️ Carregar Imagem de Fundo</button>
@@ -1490,6 +1743,16 @@
                 <input type="checkbox" id="showGridLabelsInput" checked style="width:1rem;height:1rem;accent-color:var(--accent);">
                 <span class="field-label" style="margin:0;">Mostrar letras/números no grid</span>
             </label>
+        </div>
+
+        <!-- Resync section -->
+        <div id="resyncSection" style="margin-top:0.75rem;padding:0.75rem;background:rgba(59,130,246,0.06);border:1px solid rgba(59,130,246,0.2);border-radius:0.625rem;">
+            <p style="font-size:0.75rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.5rem;">📡 Sincronização P2P</p>
+            <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;">
+                <button id="resyncBtn" class="btn btn-sm" style="background:linear-gradient(135deg,#0f766e,#2563eb);">🔄 Resync Manual</button>
+                <span id="resyncStatus" style="font-size:0.72rem;color:var(--text-muted);flex:1;"></span>
+            </div>
+            <p id="resyncHint" style="font-size:0.7rem;color:var(--text-muted);margin-top:0.4rem;line-height:1.4;"></p>
         </div>
 
         <div class="custom-modal-buttons">
@@ -1548,7 +1811,10 @@ const npcDescriptionTextarea = $('npcDescription');
 const npcStatsTextarea = $('npcStats');
 const tokenWidthInput = $('tokenWidthInput');
 const tokenHeightInput = $('tokenHeightInput');
-const npcVisionRadiusInput = $('npcVisionRadius');
+const npcVisionRadiusInput    = $('npcVisionRadius');
+const npcVisionRadiusLabel    = $('npcVisionRadiusLabel');
+const npcVisionConeAngleInput = $('npcVisionConeAngle');
+const npcVisionConeAngleLabel = $('npcVisionConeAngleLabel');
 const npcLightRadiusInput  = $('npcLightRadius');
 const npcLightColorInput   = $('npcLightColor');
 const npcLightIntensityInput = $('npcLightIntensity');
@@ -1577,7 +1843,9 @@ const rulerBtn = $('rulerBtn');
 const coneBtn = $('coneBtn');
 const moveToolBtn = $('moveToolBtn');
 const drawLineBtn = $('drawLineBtn');
-const eraserBtn = $('eraserBtn');
+const eraserBtn=$('eraserBtn');
+const wallBtn        = $('wallBtn');
+const wallEraserBtn  = $('wallEraserBtn');
 const drawColorInput = $('drawColorInput');
 const unitQuickSelect = $('unitQuickSelect');
 const undoBtn = $('undoBtn');
@@ -1607,6 +1875,8 @@ const gridColsInput = $('gridColsInput');
 const gridRowsInput = $('gridRowsInput');
 const cellSizeInput = $('cellSizeInput');
 const gridColorInput = $('gridColorInput');
+const gridOpacityInput     = $('gridOpacityInput');
+const gridOpacityValueSpan = $('gridOpacityValue');
 const showGridLabelsInput = $('showGridLabelsInput');
 const unitSystemInput = $('unitSystemInput');
 const scalePerSquareInput = $('scalePerSquareInput');
@@ -1625,6 +1895,8 @@ const toggleNpcDetailBtn = $('toggleNpcDetailBtn');
 const backToMainBtn = $('backToMainBtn');
 const coordDisplay = $('coordDisplay');
 const zoomDisplay = $('zoomDisplay');
+const toolsDrawerBtn = $('toolsDrawerBtn');
+const mapControlsOverlay = $('mapControlsOverlay');
 const addInitiativeBtn = $('addInitiativeBtn');
 const nextTurnBtn = $('nextTurnBtn');
 const clearInitiativeBtn = $('clearInitiativeBtn');
@@ -1660,11 +1932,17 @@ let panX = 0, panY = 0;
 let isPanning = false;
 let lastMouseX = 0, lastMouseY = 0;
 let currentTool = 'move';
+// Rotation handle drag state
+let isRotating = false;
+let rotStartAngle = 0;
+let rotStartTokenRot = 0;
 let rulerStart = null, rulerEnd = null;
 let rulerMode = 'line';       // 'line' | 'cone'
 let rulerConeAngle = 60;      // degrees, configurable
-let drawingStart = null, drawingEnd = null;
-let drawColor = '#ef4444';
+let drawingStart=null,drawingEnd=null;
+let drawColor='#ef4444';
+let walls=[];
+let wallStart=null,wallEnd=null;
 const DRAW_WIDTH = 3;
 let mapBackgroundImgObj = null;
 let initiativeOrder = [];
@@ -1688,7 +1966,8 @@ let fowCtx = null;
 // ============================================================
 let glEnabled       = false;
 let lightingCanvas  = null;   // WebGL overlay canvas element
-let gl              = null;   // WebGL2 context
+let gl              = null;   // WebGL2/WebGL1 context
+let glIsWebGL2      = false;  // true = WebGL2, false = WebGL1 (iOS fallback)
 let glProgram       = null;
 let glPosBuffer     = null;
 let glUniforms      = {};     // cached uniform locations
@@ -1696,10 +1975,14 @@ let glAmbientIntensity = 0.08;          // 0..1
 let glAmbientColor     = [0.05, 0.06, 0.18]; // night sky blue
 let glDefaultLightRadius    = 5;
 let glDefaultLightIntensity = 1.0;
-// Manual light sources: [{id, x, y, color:[r,g,b], radius, intensity, label}]
+// Manual light sources: [{id, x, y, color, radius, intensity, label, isDragging}]
 let manualLights = [];
+let selectedLightToken = null;
+let lightDragOffsetX = 0, lightDragOffsetY = 0;
+let lightTokensVisible = true; // toggle visibility of light token icons on canvas
 
-const GL_VS = `#version 300 es
+const // WebGL2 shaders (#version 300 es)
+GL_VS = `#version 300 es
 in vec2 a_pos;
 void main(){gl_Position=vec4(a_pos,0.0,1.0);}
 `;
@@ -1720,26 +2003,90 @@ uniform vec3  u_lightColor[48];
 uniform float u_lightRadius[48];
 uniform float u_lightIntensity[48];
 
+uniform int u_numWalls;
+uniform vec4 u_walls[32];
+bool segBlock(vec2 a,vec2 b,vec2 c,vec2 d){
+    vec2 r=b-a,s=d-c;float dn=r.x*s.y-r.y*s.x;
+    if(abs(dn)<0.0001)return false;
+    vec2 q=c-a;float t=(q.x*s.y-q.y*s.x)/dn,u=(q.x*r.y-q.y*r.x)/dn;
+    return t>0.001&&t<0.999&&u>0.001&&u<0.999;
+}
 void main(){
-    // screen coord (top-left origin)
-    vec2 sc = vec2(gl_FragCoord.x, u_resolution.y - gl_FragCoord.y);
-    // grid coord (in grid-squares)
-    vec2 gc = (sc - u_pan) / (u_zoom * u_cellSize);
-
-    vec3 total = u_ambient;
-
-    for(int i = 0; i < 48; i++){
-        if(i >= u_numLights) break;
-        float d = distance(gc, u_lightPos[i]);
-        float r = max(u_lightRadius[i], 0.001);
-        if(d < r){
-            float t   = 1.0 - smoothstep(r * 0.05, r, d);
-            float att = t * t * t;
-            total += u_lightColor[i] * u_lightIntensity[i] * att;
+    vec2 sc=vec2(gl_FragCoord.x,u_resolution.y-gl_FragCoord.y);
+    vec2 gc=(sc-u_pan)/(u_zoom*u_cellSize);
+    vec3 total=u_ambient;
+    for(int i=0;i<48;i++){
+        if(i>=u_numLights)break;
+        float d=distance(gc,u_lightPos[i]);
+        float r=max(u_lightRadius[i],0.001);
+        if(d<r){
+            bool blocked=false;
+            for(int j=0;j<32;j++){
+                if(j>=u_numWalls)break;
+                if(segBlock(u_lightPos[i],gc,u_walls[j].xy,u_walls[j].zw)){blocked=true;break;}
+            }
+            if(!blocked){
+                float t=1.0-smoothstep(r*0.05,r,d);float att=t*t*t;
+                total+=u_lightColor[i]*u_lightIntensity[i]*att;
+            }
         }
     }
-    total = clamp(total, 0.0, 1.0);
-    fragColor = vec4(total, 1.0);
+    total=clamp(total,0.0,1.0);
+    fragColor=vec4(total,1.0);
+}
+`;
+
+// WebGL1 shaders (GLSL ES 1.00) — fallback for iOS Safari / older Android
+const GL_VS1 = `
+attribute vec2 a_pos;
+void main(){gl_Position=vec4(a_pos,0.0,1.0);}
+`;
+
+const GL_FS1 = `
+precision highp float;
+
+uniform vec2  u_resolution;
+uniform vec2  u_pan;
+uniform float u_zoom;
+uniform float u_cellSize;
+uniform vec3  u_ambient;
+
+uniform int   u_numLights;
+uniform vec2  u_lightPos[48];
+uniform vec3  u_lightColor[48];
+uniform float u_lightRadius[48];
+uniform float u_lightIntensity[48];
+
+uniform int u_numWalls;
+uniform vec4 u_walls[32];
+bool segBlock(vec2 a,vec2 b,vec2 c,vec2 d){
+    vec2 r=b-a,s=d-c;float dn=r.x*s.y-r.y*s.x;
+    if(abs(dn)<0.0001)return false;
+    vec2 q=c-a;float t=(q.x*s.y-q.y*s.x)/dn,u=(q.x*r.y-q.y*r.x)/dn;
+    return t>0.001&&t<0.999&&u>0.001&&u<0.999;
+}
+void main(){
+    vec2 sc=vec2(gl_FragCoord.x,u_resolution.y-gl_FragCoord.y);
+    vec2 gc=(sc-u_pan)/(u_zoom*u_cellSize);
+    vec3 total=u_ambient;
+    for(int i=0;i<48;i++){
+        if(i>=u_numLights)break;
+        float d=distance(gc,u_lightPos[i]);
+        float r=max(u_lightRadius[i],0.001);
+        if(d<r){
+            bool blocked=false;
+            for(int j=0;j<32;j++){
+                if(j>=u_numWalls)break;
+                if(segBlock(u_lightPos[i],gc,u_walls[j].xy,u_walls[j].zw)){blocked=true;break;}
+            }
+            if(!blocked){
+                float t=1.0-smoothstep(r*0.05,r,d);float att=t*t*t;
+                total+=u_lightColor[i]*u_lightIntensity[i]*att;
+            }
+        }
+    }
+    total=clamp(total,0.0,1.0);
+    gl_FragColor=vec4(total,1.0);
 }
 `;
 
@@ -1751,16 +2098,22 @@ const MAX_UNDO = 30;
 let mapSettings = {
     name: 'Mapa Padrão',
     unit: 'quadrados',
-    unitSystem: 'squares',     // 'squares' | 'meters' | 'feet'
+    unitSystem: 'meters',     // 'squares' | 'meters' | 'feet'
     scalePerSquare: 1.5,       // real-world units per square (e.g. 1.5m or 5ft)
     coneAngle: 60,             // default cone angle in degrees
     gridCols: 20,
     gridRows: 15,
     backgroundImage: '',
     gridColor: '#4b5563',
+    gridOpacity: 1,
     showGridLabels: true,
     cellSize: 40
 };
+// Restore gridOpacity from previous session
+(function() {
+    const saved = localStorage.getItem('gridOpacity');
+    if (saved !== null && !isNaN(Number(saved))) mapSettings.gridOpacity = Number(saved);
+})();
 
 function GS() { return mapSettings.cellSize || 40; }
 
@@ -1802,15 +2155,9 @@ function applyHistoryState(state) {
 //   STORAGE
 // ============================================================
 function saveStateToStorage() {
-    try {
-        localStorage.setItem('mapSettings', JSON.stringify(mapSettings));
-        localStorage.setItem('npcs', JSON.stringify(npcs));
-        localStorage.setItem('tokens', JSON.stringify(tokens.map(t=>({...t,imageObj:null}))));
-        localStorage.setItem('drawings', JSON.stringify(drawings));
-        localStorage.setItem('initiativeOrder', JSON.stringify(initiativeOrder));
-        localStorage.setItem('currentTurnIndex', currentTurnIndex);
-        localStorage.setItem('glState', JSON.stringify({ glEnabled, glAmbientIntensity, glAmbientColor, manualLights }));
-    } catch(e) { console.warn('Storage full or unavailable', e); }
+    // Auto-save desativado: use o botão 💾 Salvar para exportar o mapa manualmente.
+    // Apenas fowExplored continua sendo persistido (estado de sessão ativa).
+    try { localStorage.setItem('gridOpacity', mapSettings.gridOpacity); } catch(e){}
 }
 
 // ============================================================
@@ -1847,6 +2194,9 @@ function reloadTokenImages() {
 //   SCREEN MANAGEMENT
 // ============================================================
 function showMainScreen() {
+    // Limpar chaves de auto-save legadas (caso o usuário venha de versão anterior)
+    ['mapSettings','npcs','tokens','drawings','initiativeOrder','currentTurnIndex','glState']
+        .forEach(k => localStorage.removeItem(k));
     mainScreen.classList.remove('hidden');
     mapApplication.classList.add('hidden');
 }
@@ -1862,7 +2212,7 @@ async function showMapApplication(clearCurrentMap = false) {
         mapSettings = {
             name:'Novo Mapa', unit:'quad.', unitSystem:'squares', scalePerSquare:1.5,
             coneAngle:60, gridCols:20, gridRows:15, backgroundImage:'',
-            gridColor:'#4b5563', showGridLabels:true, cellSize:40
+            gridColor:'#4b5563', gridOpacity:1, showGridLabels:true, cellSize:40, unitSystem:'meters'
         };
         mapBackgroundImgObj = null;
         localStorage.clear();
@@ -1870,35 +2220,21 @@ async function showMapApplication(clearCurrentMap = false) {
         glEnabled = false; manualLights = [];
         if (lightingCanvas) lightingCanvas.style.display = 'none';
         updateEnvUI();
+        closeToolsDrawer();
         // Collapse both sidebars for a clean canvas-first experience
         npcSidebar.classList.add('collapsed');
         npcDetailPanel.classList.add('collapsed');
         toggleNpcListBtn.innerHTML = '▶';
         toggleNpcDetailBtn.innerHTML = '◀';
     } else {
-        const sm = JSON.parse(localStorage.getItem('mapSettings'));
-        if (sm) mapSettings = {
-            gridColor:'#4b5563', showGridLabels:true, cellSize:40,
-            unitSystem:'squares', scalePerSquare:1.5, coneAngle:60,
-            ...sm
-        };
-        npcs = JSON.parse(localStorage.getItem('npcs')) || {};
-        const st = JSON.parse(localStorage.getItem('tokens')) || [];
-        tokens = st.map(t=>({...t,imageObj:null,isDragging:false,widthInGrids:t.widthInGrids||1,heightInGrids:t.heightInGrids||1}));
-        drawings = JSON.parse(localStorage.getItem('drawings')) || [];
-        initiativeOrder = JSON.parse(localStorage.getItem('initiativeOrder')) || [];
-        currentTurnIndex = parseInt(localStorage.getItem('currentTurnIndex')) || 0;
-        // Restore GL state
-        const glSaved = JSON.parse(localStorage.getItem('glState') || 'null');
-        if (glSaved) {
-            glAmbientIntensity = glSaved.glAmbientIntensity ?? glAmbientIntensity;
-            glAmbientColor     = glSaved.glAmbientColor     ?? glAmbientColor;
-            manualLights       = glSaved.manualLights       ?? [];
-            if (glSaved.glEnabled) {
-                glEnabled = true;
-                // WebGL init deferred until first draw
-            }
-        }
+        // Não zerar variáveis aqui: podem ter sido carregadas via arquivo JSON
+        // (loadMapFromFile) ou via full_state_sync (P2P) antes desta chamada.
+        // Apenas garantir valores padrão para o que estiver indefinido.
+        if (!npcs)            npcs            = {};
+        if (!tokens)          tokens          = [];
+        if (!drawings)        drawings        = [];
+        if (!initiativeOrder) initiativeOrder = [];
+        if (currentTurnIndex === undefined || currentTurnIndex === null) currentTurnIndex = 0;
     }
 
     // Update the compact pill and toolbar unit selector
@@ -1910,11 +2246,18 @@ async function showMapApplication(clearCurrentMap = false) {
     await Promise.all([loadMapBackground(), reloadTokenImages()]);
 
     requestAnimationFrame(() => {
+        // Sidebars sempre começam fechadas ao abrir o arquivo
+        npcSidebar.classList.add('collapsed');
+        npcDetailPanel.classList.add('collapsed');
+        toggleNpcListBtn.innerHTML = '▶';
+        if (toggleNpcDetailBtn) toggleNpcDetailBtn.innerHTML = '◀';
         resizeCanvasAndDraw();
         renderNpcList();
         renderInitiative();
         updateToggleButtonPositions();
         updateToolButtonsState();
+        applyRoleUI();
+        initAllScrollFades();
         updateTokenControlsState();
         updateEnvUI();
         // Sync lighting canvas visibility
@@ -1958,6 +2301,48 @@ function hideCustomConfirm() {
 // ============================================================
 //   NPC MANAGEMENT
 // ============================================================
+function toggleLightLock(id) {
+    const ml = manualLights.find(m => m.id === id);
+    if (!ml) return;
+    ml.locked = !ml.locked;
+    if (ml.locked && selectedLightToken?.id === id) {
+        ml.isDragging = false; // stop any active drag
+    }
+    renderManualLightList();
+    drawCanvas();
+    saveStateToStorage();
+    broadcast({ type: 'gl_manual_lights', manualLights });
+    showFeedback(ml.locked ? '🔒 Luz bloqueada.' : '🔓 Luz desbloqueada.', 'info');
+}
+
+function focusLightToken(id) {
+    const ml = manualLights.find(m => m.id === id);
+    if (!ml) return;
+    selectedLightToken = ml;
+    const cs = GS();
+    panX = canvas.width  / 2 - (ml.x + 0.5) * cs * zoomLevel;
+    panY = canvas.height / 2 - (ml.y + 0.5) * cs * zoomLevel;
+    resizeCanvasAndDraw();
+    renderManualLightList();
+}
+
+function focusCameraOnNpc(npcId) {
+    const token = tokens.find(t => t.npcId === npcId);
+    if (!token) return;
+    const cs = GS();
+    // Centro do token em pixels no espaço do mundo
+    const tokenCenterX = (token.x + token.widthInGrids / 2) * cs * zoomLevel;
+    const tokenCenterY = (token.y + token.heightInGrids / 2) * cs * zoomLevel;
+    // Centraliza a câmera no token
+    panX = canvas.width  / 2 - tokenCenterX;
+    panY = canvas.height / 2 - tokenCenterY;
+    resizeCanvasAndDraw();
+    // Flash de destaque no token
+    selectedToken = token;
+    updateTokenControlsState();
+    drawCanvas();
+}
+
 function renderNpcList() {
     npcListEl.innerHTML = '';
     const ids = Object.keys(npcs);
@@ -1965,29 +2350,23 @@ function renderNpcList() {
         npcListEl.innerHTML = `<p style="font-size:0.8125rem;color:var(--text-muted);text-align:center;padding:1rem 0;">Nenhum NPC ainda.</p>`;
         return;
     }
-    const player = isPlayer();
     ids.forEach(id => {
         const npc = npcs[id];
-        const isEnemy = !!npc.isEnemy;
-        const locked = player && isEnemy;
-
+        // Jogadores não veem NPCs inimigos na lista
+        if (!isHost && myRole !== null && npc.isEnemy) return;
         const div = D.createElement('div');
-        div.className = `npc-list-item ${id === currentNpcId ? 'selected' : ''} ${locked ? 'player-locked' : ''}`;
+        div.className = `npc-list-item ${id === currentNpcId ? 'selected' : ''}`;
 
         const nameBtn = D.createElement('button');
         nameBtn.className = 'npc-name-btn';
         nameBtn.textContent = npc.name || 'NPC Sem Nome';
-        if (!locked) {
-            nameBtn.addEventListener('click', () => selectNpc(id));
-        } else {
-            nameBtn.title = 'Apenas o Mestre pode editar inimigos';
-        }
+        nameBtn.addEventListener('click', () => selectNpc(id));
 
-        // HP display — só aliados para o jogador
+        // HP display
         const hpSpan = D.createElement('span');
         const cur = npc.hpCurrent !== undefined ? npc.hpCurrent : (npc.hpMax || 0);
         const max = npc.hpMax || 0;
-        if (max > 0 && !locked) {
+        if (max > 0) {
             hpSpan.style.cssText = 'font-size:0.7rem;color:var(--text-muted);white-space:nowrap;flex-shrink:0;';
             const ratio = Math.max(0, Math.min(1, cur/max));
             const col = ratio > 0.6 ? '#10b981' : ratio > 0.3 ? '#f59e0b' : '#ef4444';
@@ -1995,39 +2374,46 @@ function renderNpcList() {
         }
 
         const tag = D.createElement('span');
-        tag.className = `npc-tag ${isEnemy ? 'enemy' : 'ally'}`;
-        tag.textContent = isEnemy ? 'INI' : 'ALI';
-        if (!player) {
-            tag.title = 'Clique para alternar';
-            tag.addEventListener('click', e => {
-                e.stopPropagation();
-                npc.isEnemy = !npc.isEnemy;
-                saveStateToStorage(); renderNpcList(); drawCanvas();
+        tag.className = `npc-tag ${npc.isEnemy ? 'enemy' : 'ally'}`;
+        tag.textContent = npc.isEnemy ? 'INI' : 'ALI';
+        tag.title = 'Clique para alternar';
+        tag.addEventListener('click', e => {
+            e.stopPropagation();
+            npc.isEnemy = !npc.isEnemy;
+            saveStateToStorage();
+            renderNpcList();
+            drawCanvas();
+        });
+
+        const delBtn = D.createElement('button');
+        delBtn.style.cssText = 'background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:1rem;padding:0 0.2rem;flex-shrink:0;line-height:1;';
+        delBtn.innerHTML = '×';
+        delBtn.title = 'Excluir NPC';
+        delBtn.addEventListener('click', e => {
+            e.stopPropagation();
+            showCustomConfirm(`Excluir "${npc.name || 'NPC'}"?`, confirmed => {
+                if (confirmed) deleteNpc(id);
+                hideCustomConfirm();
             });
-        } else {
-            tag.style.cursor = 'default';
-        }
+        });
+
+        // Eye button — focus camera on token
+        const eyeBtn = D.createElement('button');
+        const hasToken = tokens.some(t => t.npcId === id);
+        eyeBtn.className = 'npc-focus-btn' + (hasToken ? '' : ' no-token');
+        eyeBtn.innerHTML = '👁️';
+        eyeBtn.title = hasToken ? 'Focar câmera no token' : 'Sem token no mapa';
+        eyeBtn.addEventListener('click', e => {
+            e.stopPropagation();
+            if (hasToken) focusCameraOnNpc(id);
+            else showFeedback('Este NPC não tem token no mapa.', 'error');
+        });
 
         div.appendChild(nameBtn);
-        if (max > 0 && !locked) div.appendChild(hpSpan);
+        if (max > 0) div.appendChild(hpSpan);
+        div.appendChild(eyeBtn);
         div.appendChild(tag);
-
-        // Botão excluir — só mestre
-        if (!player) {
-            const delBtn = D.createElement('button');
-            delBtn.style.cssText = 'background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:1rem;padding:0 0.2rem;flex-shrink:0;line-height:1;';
-            delBtn.innerHTML = '×';
-            delBtn.title = 'Excluir NPC';
-            delBtn.addEventListener('click', e => {
-                e.stopPropagation();
-                showCustomConfirm(`Excluir "${npc.name || 'NPC'}"?`, confirmed => {
-                    if (confirmed) deleteNpc(id);
-                    hideCustomConfirm();
-                });
-            });
-            div.appendChild(delBtn);
-        }
-
+        div.appendChild(delBtn);
         npcListEl.appendChild(div);
     });
 }
@@ -2053,6 +2439,7 @@ function autoSaveCurrentNpc() {
         tokenHeight: parseInt(tokenHeightInput.value) || 1,
         isEnemy: isEnemy,
         visionRadius: parseInt(npcVisionRadiusInput.value) || 6,
+        visionConeAngle: parseInt(npcVisionConeAngleInput.value) || 65,
         lightRadius:    parseFloat(npcLightRadiusInput.value)    || 0,
         lightColor:     npcLightColorInput.value                 || '#ffaa44',
         lightIntensity: parseFloat(npcLightIntensityInput.value) || 1.0
@@ -2072,7 +2459,10 @@ function selectNpc(id) {
     npcStatsTextarea.value = npc.stats || '';
     tokenWidthInput.value = npc.tokenWidth || 1;
     tokenHeightInput.value = npc.tokenHeight || 1;
-    npcVisionRadiusInput.value = npc.visionRadius !== undefined ? npc.visionRadius : 6;
+    npcVisionRadiusInput.value    = npc.visionRadius    !== undefined ? npc.visionRadius    : 6;
+    if (npcVisionRadiusLabel) npcVisionRadiusLabel.textContent = npcVisionRadiusInput.value;
+    npcVisionConeAngleInput.value = npc.visionConeAngle !== undefined ? npc.visionConeAngle : 65;
+    npcVisionConeAngleLabel.textContent = (npc.visionConeAngle !== undefined ? npc.visionConeAngle : 65) + '°';
     npcLightRadiusInput.value    = npc.lightRadius    || 0;
     npcLightColorInput.value     = npc.lightColor     || '#ffaa44';
     npcLightIntensityInput.value = npc.lightIntensity !== undefined ? npc.lightIntensity : 1.0;
@@ -2093,9 +2483,18 @@ function selectNpc(id) {
 function createNewNpc() {
     autoSaveCurrentNpc();
     const newId = `npc_${Date.now()}`;
-    npcs[newId] = { name:'Novo NPC', type:'', hpMax:10, hpCurrent:10, initiative:0, description:'', stats:'', tokenWidth:1, tokenHeight:1, tokenImageBase64:'', isEnemy:false, visionRadius:6, lightRadius:0, lightColor:'#ffaa44', lightIntensity:1.0 };
+    npcs[newId] = { name:'Novo NPC', type:'', hpMax:10, hpCurrent:10, initiative:0, description:'', stats:'', tokenWidth:1, tokenHeight:1, tokenImageBase64:'', isEnemy:false, visionRadius:6, visionConeAngle:65, lightRadius:0, lightColor:'#ffaa44', lightIntensity:1.0 };
     saveStateToStorage();
     selectNpc(newId);
+    // Abrir painel direito automaticamente
+    if (npcDetailPanel.classList.contains('collapsed')) {
+        npcDetailPanel.classList.remove('collapsed');
+        toggleNpcDetailBtn.innerHTML = '▶';
+        updateToggleButtonPositions();
+        setTimeout(resizeCanvasAndDraw, 270);
+    }
+    // Focar no campo nome para edição imediata
+    setTimeout(() => { npcNameInput.focus(); npcNameInput.select(); }, 280);
     showFeedback('Novo NPC criado!', 'success');
 }
 
@@ -2203,9 +2602,51 @@ function tokenVisionRadius(token) {
  * Por enquanto implementamos visão circular pura (sem obstáculos), mas a
  * função está estruturada para receber um mapa de paredes no futuro.
  */
-function hasLoS(ax, ay, bx, by) {
-    // Sem paredes configuradas → visão livre
+// ── WALLS ──────────────────────────────────────────────────
+function segmentsIntersect(ax,ay,bx,by,cx,cy,dx,dy){
+    const rx=bx-ax,ry=by-ay,sx=dx-cx,sy=dy-cy,dn=rx*sy-ry*sx;
+    if(Math.abs(dn)<1e-10)return false;
+    const t=((cx-ax)*sy-(cy-ay)*sx)/dn,u=((cx-ax)*ry-(cy-ay)*rx)/dn;
+    return t>1e-6&&t<1-1e-6&&u>1e-6&&u<1-1e-6;
+}
+function hasLoS(ax,ay,bx,by){
+    for(const w of walls)if(segmentsIntersect(ax,ay,bx,by,w.x1,w.y1,w.x2,w.y2))return false;
     return true;
+}
+function drawWalls(){
+    if(!(isHost||myRole===null))return;
+    if(!walls.length&&!(currentTool==='wall'&&wallStart&&wallEnd))return;
+    const cs=GS();ctx.save();ctx.lineCap='round';
+    walls.forEach(w=>{
+        ctx.beginPath();ctx.moveTo(w.x1*cs,w.y1*cs);ctx.lineTo(w.x2*cs,w.y2*cs);
+        ctx.strokeStyle='rgba(239,68,68,0.9)';ctx.lineWidth=4/zoomLevel;ctx.stroke();
+        [{x:w.x1,y:w.y1},{x:w.x2,y:w.y2}].forEach(p=>{
+            ctx.beginPath();ctx.arc(p.x*cs,p.y*cs,4/zoomLevel,0,Math.PI*2);
+            ctx.fillStyle='rgba(239,68,68,1)';ctx.fill();
+        });
+    });
+    if(currentTool==='wall'&&wallStart&&wallEnd){
+        ctx.setLineDash([6/zoomLevel,4/zoomLevel]);
+        ctx.strokeStyle='rgba(239,68,68,0.45)';ctx.lineWidth=3/zoomLevel;
+        ctx.beginPath();ctx.moveTo(wallStart.x*cs,wallStart.y*cs);
+        ctx.lineTo(wallEnd.x*cs,wallEnd.y*cs);ctx.stroke();ctx.setLineDash([]);
+    }
+    ctx.restore();
+}
+function eraseWallAt(world){
+    if(!walls.length)return;
+    let bestId=null,bestDist=Infinity;
+    walls.forEach(w=>{
+        const dx=w.x2-w.x1,dy=w.y2-w.y1,len2=dx*dx+dy*dy;
+        const t=len2<1e-10?0:Math.max(0,Math.min(1,((world.x-w.x1)*dx+(world.y-w.y1)*dy)/len2));
+        const d=Math.hypot(world.x-(w.x1+t*dx),world.y-(w.y1+t*dy));
+        if(d<bestDist){bestDist=d;bestId=w.id;}
+    });
+    if(bestId!==null&&bestDist<1.5){
+        walls=walls.filter(w=>w.id!==bestId);
+        broadcast({type:'wall_remove',wallId:bestId});
+        saveStateToStorage();drawCanvas();showFeedback('Parede removida','info');
+    }
 }
 
 /**
@@ -2222,6 +2663,13 @@ function computeVisibleCells() {
         if (radius <= 0) return;
         const { cx, cy } = tokenCenterGrid(token);
 
+        const npc = npcs[token.npcId];
+        const coneAngleDeg  = (npc?.visionConeAngle !== undefined ? npc.visionConeAngle : 65);
+        const useCone       = coneAngleDeg < 360;
+        // token.rotation: 0 = cima (norte), -90° offset para alinhar com canvas
+        const facingRad     = ((token.rotation || 0) - 90) * Math.PI / 180;
+        const halfConeRad   = (coneAngleDeg / 2) * Math.PI / 180;
+
         const minC = Math.max(0, Math.floor(cx - radius - 1));
         const maxC = Math.min(cols - 1, Math.ceil(cx + radius + 1));
         const minR = Math.max(0, Math.floor(cy - radius - 1));
@@ -2229,11 +2677,20 @@ function computeVisibleCells() {
 
         for (let c = minC; c <= maxC; c++) {
             for (let r = minR; r <= maxR; r++) {
-                // Distância do centro do token ao centro da célula
-                const dc = (c + 0.5) - cx;
-                const dr = (r + 0.5) - cy;
+                const dc   = (c + 0.5) - cx;
+                const dr   = (r + 0.5) - cy;
                 const dist = Math.sqrt(dc * dc + dr * dr);
-                if (dist <= radius + 0.5 && hasLoS(cx, cy, c + 0.5, r + 0.5)) {
+                if (dist > radius + 0.5) continue;
+
+                if (useCone) {
+                    const cellAngle = Math.atan2(dr, dc);
+                    let diff = cellAngle - facingRad;
+                    // Normalizar para [-π, π]
+                    diff -= Math.PI * 2 * Math.round(diff / (Math.PI * 2));
+                    if (Math.abs(diff) > halfConeRad) continue;
+                }
+
+                if (hasLoS(cx, cy, c + 0.5, r + 0.5)) {
                     visible.add(`${c},${r}`);
                 }
             }
@@ -2268,109 +2725,88 @@ function ensureFowCanvas() {
  * Modo GM  → névoa semi-transparente fina sobre tudo (não bloqueia visão do mestre)
  * Modo Player → névoa densa; células nunca vistas = opacas; exploradas = meia-névoa
  */
+function tokenConeParams(token) {
+    const npc = npcs[token.npcId];
+    const coneAngleDeg = (npc?.visionConeAngle !== undefined ? npc.visionConeAngle : 65);
+    return {
+        useCone:     coneAngleDeg < 360,
+        facingRad:   ((token.rotation || 0) - 90) * Math.PI / 180,
+        halfConeRad: (coneAngleDeg / 2) * Math.PI / 180
+    };
+}
+
 function drawFow(visibleSet) {
     if (!fowEnabled) return;
     ensureFowCanvas();
 
-    const cs  = GS();
-    const fc  = fowCtx;
+    const cs   = GS();
+    const fc   = fowCtx;
     const cols = mapSettings.gridCols;
     const rows = mapSettings.gridRows;
+    const renderAsGm = fowGmReveal && (isHost || myRole === null);
 
     fc.clearRect(0, 0, fowCanvas.width, fowCanvas.height);
 
-    if (fowGmReveal) {
-        // ── MODO GM: névoa sutil apenas sobre células fora da visão ──────────
-        fc.fillStyle = 'rgba(0,0,0,0.0)';
-        fc.fillRect(0, 0, fowCanvas.width, fowCanvas.height);
-
+    if (renderAsGm) {
+        // ── MODO GM: névoa suave célula-a-célula ──────────────────────────
         for (let c = 0; c < cols; c++) {
             for (let r = 0; r < rows; r++) {
                 const key = `${c},${r}`;
-                if (visibleSet.has(key)) continue; // em visão → sem névoa
+                if (visibleSet.has(key)) continue;          // visível → sem névoa
                 const explored = fowExplored[key];
                 fc.fillStyle = explored
-                    ? 'rgba(0,0,15,0.52)'      // explorada → névoa média
-                    : 'rgba(0,0,10,0.82)';      // nunca vista → névoa densa
-                fc.fillRect(c * cs, r * cs, cs, cs);
+                    ? 'rgba(0,0,15,0.48)'   // explorado → névoa média
+                    : 'rgba(0,0,10,0.80)';  // nunca visto → névoa densa
+                // +1px de sobreposição elimina linhas entre células
+                fc.fillRect(c * cs - 0.5, r * cs - 0.5, cs + 1, cs + 1);
             }
         }
 
-        // Suavização do perímetro das zonas visíveis (glow radial por token)
-        fc.save();
-        fc.globalCompositeOperation = 'destination-out';
-        tokens.forEach(token => {
-            const radius = tokenVisionRadius(token);
-            if (radius <= 0) return;
-            const { cx, cy } = tokenCenterGrid(token);
-            const px = cx * cs, py = cy * cs;
-            const outerR = (radius + 0.7) * cs;
-            const innerR = Math.max(0, (radius - 1.2) * cs);
-            const grad = fc.createRadialGradient(px, py, innerR, px, py, outerR);
-            grad.addColorStop(0,   'rgba(0,0,0,1)');
-            grad.addColorStop(0.7, 'rgba(0,0,0,0.85)');
-            grad.addColorStop(1,   'rgba(0,0,0,0)');
-            fc.fillStyle = grad;
-            fc.beginPath();
-            fc.arc(px, py, outerR, 0, Math.PI * 2);
-            fc.fill();
-        });
-        fc.restore();
-
     } else {
-        // ── MODO PLAYER: névoa bloqueante ─────────────────────────────────────
+        // ── MODO PLAYER: névoa bloqueante célula-a-célula ─────────────────
         // 1. Cobrir tudo com névoa densa
         fc.fillStyle = 'rgba(0,0,12,1)';
         fc.fillRect(0, 0, fowCanvas.width, fowCanvas.height);
 
-        // 2. Células exploradas (mas fora de visão) → meia-névoa
+        // 2. Por célula: limpar se visível, meia-névoa se explorada
         for (let c = 0; c < cols; c++) {
             for (let r = 0; r < rows; r++) {
                 const key = `${c},${r}`;
-                if (visibleSet.has(key) || !fowExplored[key]) continue;
-                fc.clearRect(c * cs, r * cs, cs, cs);
-                fc.fillStyle = 'rgba(0,0,12,0.60)';
-                fc.fillRect(c * cs, r * cs, cs, cs);
+                if (visibleSet.has(key)) {
+                    // Visível agora → célula limpa (+1px de overlap)
+                    fc.clearRect(c * cs - 0.5, r * cs - 0.5, cs + 1, cs + 1);
+                } else if (fowExplored[key]) {
+                    // Explorado mas fora de visão → meia-névoa
+                    fc.clearRect(c * cs, r * cs, cs, cs);
+                    fc.fillStyle = 'rgba(0,0,12,0.58)';
+                    fc.fillRect(c * cs, r * cs, cs, cs);
+                }
             }
         }
-
-        // 3. Abrir "buracos" suaves nas zonas de visão atual (destination-out)
-        fc.save();
-        fc.globalCompositeOperation = 'destination-out';
-        tokens.forEach(token => {
-            const radius = tokenVisionRadius(token);
-            if (radius <= 0) return;
-            const { cx, cy } = tokenCenterGrid(token);
-            const px = cx * cs, py = cy * cs;
-            const outerR = (radius + 0.5) * cs;
-            const innerR = Math.max(0, (radius - 1.0) * cs);
-            const grad = fc.createRadialGradient(px, py, innerR, px, py, outerR);
-            grad.addColorStop(0,   'rgba(0,0,0,1)');
-            grad.addColorStop(0.75,'rgba(0,0,0,0.9)');
-            grad.addColorStop(1,   'rgba(0,0,0,0)');
-            fc.fillStyle = grad;
-            fc.beginPath();
-            fc.arc(px, py, outerR, 0, Math.PI * 2);
-            fc.fill();
-        });
-        fc.restore();
     }
 
-    // Blit do offscreen canvas no canvas principal (já sob transform)
+    // Blit no canvas principal
     ctx.drawImage(fowCanvas, 0, 0);
 }
 
 /** Desenha círculos de raio de visão (editor) quando FoW está ativo */
 function drawFowRadiiHelpers(visibleSet) {
-    if (!fowEnabled || !fowGmReveal) return;
+    if (!fowEnabled || !fowGmReveal || !(isHost || myRole === null)) return;
     const cs = GS();
     tokens.forEach(token => {
         const radius = tokenVisionRadius(token);
         if (radius <= 0) return;
         const { cx, cy } = tokenCenterGrid(token);
+        const {useCone: uch, facingRad: frh, halfConeRad: hch} = tokenConeParams(token);
         ctx.save();
         ctx.beginPath();
-        ctx.arc(cx * cs, cy * cs, radius * cs, 0, Math.PI * 2);
+        if (uch) {
+            ctx.moveTo(cx * cs, cy * cs);
+            ctx.arc(cx * cs, cy * cs, radius * cs, frh - hch, frh + hch);
+            ctx.closePath();
+        } else {
+            ctx.arc(cx * cs, cy * cs, radius * cs, 0, Math.PI * 2);
+        }
         ctx.strokeStyle = 'rgba(167,139,250,0.35)';
         ctx.lineWidth = 1.5 / zoomLevel;
         ctx.setLineDash([4 / zoomLevel, 4 / zoomLevel]);
@@ -2419,12 +2855,19 @@ function glCompileShader(type, src) {
 
 function initWebGL() {
     lightingCanvas = $('lightingCanvas');
-    const ctx2 = lightingCanvas.getContext('webgl2', { alpha: false, premultipliedAlpha: false });
-    if (!ctx2) { console.warn('WebGL2 not available'); return false; }
+    // Try WebGL2 first, fallback to WebGL1 for iOS Safari / older Android
+    let ctx2 = lightingCanvas.getContext('webgl2', { alpha: false, premultipliedAlpha: false });
+    glIsWebGL2 = !!ctx2;
+    if (!ctx2) {
+        ctx2 = lightingCanvas.getContext('webgl', { alpha: false, premultipliedAlpha: false });
+    }
+    if (!ctx2) { console.warn('WebGL not available'); return false; }
     gl = ctx2;
 
-    const vs = glCompileShader(gl.VERTEX_SHADER, GL_VS);
-    const fs = glCompileShader(gl.FRAGMENT_SHADER, GL_FS);
+    const vsSource = glIsWebGL2 ? GL_VS : GL_VS1;
+    const fsSource = glIsWebGL2 ? GL_FS : GL_FS1;
+    const vs = glCompileShader(gl.VERTEX_SHADER, vsSource);
+    const fs = glCompileShader(gl.FRAGMENT_SHADER, fsSource);
     glProgram = gl.createProgram();
     gl.attachShader(glProgram, vs); gl.attachShader(glProgram, fs);
     gl.linkProgram(glProgram);
@@ -2437,8 +2880,9 @@ function initWebGL() {
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
 
     // Cache uniform locations
-    const unifs = ['u_resolution','u_pan','u_zoom','u_cellSize','u_ambient',
-                   'u_numLights','u_lightPos','u_lightColor','u_lightRadius','u_lightIntensity'];
+    const unifs=['u_resolution','u_pan','u_zoom','u_cellSize','u_ambient',
+                   'u_numLights','u_lightPos','u_lightColor','u_lightRadius','u_lightIntensity',
+                   'u_numWalls','u_walls'];
     unifs.forEach(n => { glUniforms[n] = gl.getUniformLocation(glProgram, n); });
 
     return true;
@@ -2447,19 +2891,32 @@ function initWebGL() {
 function resizeLightingCanvas() {
     if (!lightingCanvas || !gl) return;
     const w = canvas.width, h = canvas.height;
+    // Only resize if dimensions actually changed (perf optimization)
+    if (lightingCanvas.width === w && lightingCanvas.height === h) return;
     lightingCanvas.width  = w;
     lightingCanvas.height = h;
-    // Sync CSS pixel dimensions to match gameCanvas
-    const rect = canvas.getBoundingClientRect();
-    lightingCanvas.style.width  = canvas.style.width  || rect.width  + 'px';
-    lightingCanvas.style.height = canvas.style.height || rect.height + 'px';
     gl.viewport(0, 0, w, h);
 }
 
 /** Collect all active lights: token lights + manual lights */
-function collectLightSources() {
+function isTokenLightVisibleToPlayer(token, visibleSet) {
+    const npc = npcs[token.npcId];
+    if (!npc) return false;
+    if (!npc.isEnemy) return true;
+    const r = npc.lightRadius || 0;
+    if (r <= 0) return false;
+    for (let dc = -Math.ceil(r); dc <= Math.ceil(r); dc++) {
+        for (let dr = -Math.ceil(r); dr <= Math.ceil(r); dr++) {
+            const gx = token.x + dc;
+            const gy = token.y + dr;
+            if (visibleSet.has(`${gx},${gy}`)) return true;
+        }
+    }
+    return false;
+}
+
+function collectLightSources(visibleSet = null) {
     const lights = [];
-    const cs = GS();
 
     // Token lights
     tokens.forEach(token => {
@@ -2467,6 +2924,11 @@ function collectLightSources() {
         if (!npc) return;
         const r = npc.lightRadius || 0;
         if (r <= 0) return;
+
+        // Para jogadores, a luz deve continuar visível sem revelar a névoa inteira.
+        // Aliados sempre emitem luz visível; inimigos só quando sua área de luz encosta na visão atual.
+        if (!isHost && myRole !== null && visibleSet && !isTokenLightVisibleToPlayer(token, visibleSet)) return;
+
         const { cx, cy } = tokenCenterGrid(token);
         const col = hexToRgb(npc.lightColor || '#ffaa44');
         lights.push({
@@ -2478,7 +2940,7 @@ function collectLightSources() {
         });
     });
 
-    // Manual lights
+    // Manual lights sempre visíveis para todos
     manualLights.forEach(ml => {
         lights.push({
             x: ml.x + 0.5, y: ml.y + 0.5,
@@ -2499,7 +2961,7 @@ function hexToRgb(hex) {
     return [isNaN(r)?1:r, isNaN(g)?1:g, isNaN(b)?1:b];
 }
 
-function renderLighting() {
+function renderLighting(visibleSet = null) {
     if (!glEnabled) return;
     if (!gl) {
         if (!initWebGL()) { glEnabled = false; updateEnvUI(); return; }
@@ -2521,7 +2983,7 @@ function renderLighting() {
     gl.uniform3fv(glUniforms['u_ambient'], glAmbientColor.map(c => c * glAmbientIntensity));
 
     // Lights
-    const lights = collectLightSources();
+    const lights = collectLightSources(visibleSet);
     const MAX_GL = 48;
     const n = Math.min(lights.length, MAX_GL);
     gl.uniform1i(glUniforms['u_numLights'], n);
@@ -2541,9 +3003,12 @@ function renderLighting() {
     gl.uniform2fv(glUniforms['u_lightPos'],       posArr);
     gl.uniform3fv(glUniforms['u_lightColor'],      colArr);
     gl.uniform1fv(glUniforms['u_lightRadius'],     radArr);
-    gl.uniform1fv(glUniforms['u_lightIntensity'],  intArr);
-
-    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    gl.uniform1fv(glUniforms['u_lightIntensity'],intArr);
+    const _wn=Math.min(walls.length,32),_wa=new Float32Array(32*4);
+    for(let i=0;i<_wn;i++){_wa[i*4]=walls[i].x1;_wa[i*4+1]=walls[i].y1;_wa[i*4+2]=walls[i].x2;_wa[i*4+3]=walls[i].y2;}
+    if(glUniforms['u_numWalls']!==undefined)gl.uniform1i(glUniforms['u_numWalls'],_wn);
+    if(glUniforms['u_walls']!==undefined)gl.uniform4fv(glUniforms['u_walls'],_wa);
+    gl.drawArrays(gl.TRIANGLE_STRIP,0,4);
 }
 
 function toggleLighting(on) {
@@ -2554,7 +3019,9 @@ function toggleLighting(on) {
         }
     }
     glEnabled = on;
-    lightingCanvas.style.display = on ? 'block' : 'none';
+    // lightingCanvas is used as offscreen WebGL target only — always hidden as DOM overlay
+    // Compositing is done manually in drawCanvas() via ctx.drawImage + multiply blend
+    lightingCanvas.style.display = 'none';
     updateEnvUI();
     drawCanvas();
     broadcast({ type: 'gl_state', glEnabled, glAmbientIntensity, glAmbientColor });
@@ -2589,20 +3056,25 @@ function setNpcLightPreset(hex) {
 
 // ── Manual Light Management ───────────────────────────────────────────────────
 function addManualLight() {
+    const offset = manualLights.length % 5;
     const light = {
         id: 'ml_' + Date.now(),
-        x: Math.floor(mapSettings.gridCols / 2),
-        y: Math.floor(mapSettings.gridRows / 2),
+        x: Math.min(Math.floor(mapSettings.gridCols / 2) + offset, mapSettings.gridCols - 1),
+        y: Math.min(Math.floor(mapSettings.gridRows / 2) + offset, mapSettings.gridRows - 1),
         color: '#ffcc66',
         radius: 5,
         intensity: 1.0,
-        label: 'Tocha ' + (manualLights.length + 1)
+        label: 'Tocha ' + (manualLights.length + 1),
+        isDragging: false,
+        locked: false
     };
     manualLights.push(light);
+    selectedLightToken = light;
     renderManualLightList();
-    if (glEnabled) drawCanvas();
+    drawCanvas();
     saveStateToStorage();
     broadcast({ type: 'gl_manual_lights', manualLights });
+    showFeedback('\uD83D\uDD25 Luz criada! Use ✕ Mover para arrastá-la.', 'success');
 }
 
 function deleteManualLight(id) {
@@ -2623,7 +3095,9 @@ function renderManualLightList() {
     list.innerHTML = '';
     manualLights.forEach(ml => {
         const div = document.createElement('div');
+        const isSelML = selectedLightToken && selectedLightToken.id === ml.id;
         div.className = 'light-item';
+        if (isSelML) div.style.cssText = 'border-color:rgba(253,230,138,0.55);background:rgba(253,230,138,0.06);';
         div.innerHTML = `
             <span class="light-item-dot" style="background:${ml.color};color:${ml.color};"></span>
             <div style="flex:1;min-width:0;">
@@ -2645,6 +3119,8 @@ function renderManualLightList() {
                         oninput="manualLights.find(m=>m.id==='${ml.id}').radius=parseFloat(this.value)||3;if(glEnabled)drawCanvas();saveStateToStorage();">
                 </div>
             </div>
+            <button onclick="focusLightToken('${ml.id}')" style="background:none;border:none;color:rgba(251,191,36,0.5);cursor:pointer;font-size:0.82rem;padding:0.1rem 0.15rem;line-height:1;flex-shrink:0;transition:color 0.15s;" title="Focar câmera" onmouseenter="this.style.color='rgba(251,191,36,1)'" onmouseleave="this.style.color='rgba(251,191,36,0.5)'">&#128065;&#65039;</button>
+            <button onclick="toggleLightLock('${ml.id}')" style="background:none;border:none;cursor:pointer;font-size:0.82rem;padding:0.1rem 0.15rem;line-height:1;flex-shrink:0;transition:opacity 0.15s;opacity:${ml.locked?1:0.4};" title="${ml.locked?'Desbloquear movimento':'Bloquear movimento'}">&#128274;</button>
             <button onclick="deleteManualLight('${ml.id}')" style="background:none;border:none;color:rgba(239,68,68,0.6);cursor:pointer;font-size:1rem;padding:0.1rem;line-height:1;flex-shrink:0;" title="Remover">×</button>
         `;
         list.appendChild(div);
@@ -2679,6 +3155,7 @@ function renderTokenLightList() {
 // ── ENV PANEL UI ──────────────────────────────────────────────────────────────
 let envPanelOpen = false;
 let activeEnvTab = 'fog';
+let toolsDrawerOpen = false;
 
 function openEnvPanel() {
     envPanelOpen = true;
@@ -2753,6 +3230,9 @@ function drawGrid() {
         ctx.drawImage(mapBackgroundImgObj, 0, 0, mapSettings.gridCols * cs, mapSettings.gridRows * cs);
     }
 
+    const gridAlpha = (mapSettings.gridOpacity != null ? mapSettings.gridOpacity : 1);
+    ctx.save();
+    ctx.globalAlpha = gridAlpha;
     ctx.strokeStyle = mapSettings.gridColor || '#4b5563';
     ctx.lineWidth = 1 / zoomLevel;
 
@@ -2778,12 +3258,92 @@ function drawGrid() {
             ctx.fillText(y + 1, 1.5 / zoomLevel, (y + 0.5) * cs);
         }
     }
+    ctx.restore();
 }
 
 function getHpColor(cur, max) {
     if (!max) return '#60a5fa';
     const r = cur / max;
     return r > 0.6 ? '#10b981' : r > 0.3 ? '#f59e0b' : '#ef4444';
+}
+
+function drawLightTokens() {
+    if (!manualLights.length || !lightTokensVisible) return;
+    const cs = GS();
+    manualLights.forEach(ml => {
+        const px = (ml.x + 0.5) * cs;
+        const py = (ml.y + 0.5) * cs;
+        const isSelected = selectedLightToken && selectedLightToken.id === ml.id;
+        const sz = Math.max(cs * 0.72, 18 / zoomLevel);
+        const half = sz / 2;
+        const hexColor = (typeof ml.color === 'string') ? ml.color : '#ffcc66';
+        ctx.save();
+        const glowR = (ml.radius || 4) * cs * 0.18;
+        const grd = ctx.createRadialGradient(px, py, 0, px, py, glowR);
+        grd.addColorStop(0, hexColor + 'bb');
+        grd.addColorStop(1, hexColor + '00');
+        ctx.fillStyle = grd;
+        ctx.beginPath();
+        ctx.arc(px, py, glowR, 0, Math.PI * 2);
+        ctx.fill();
+        const bodyR = Math.min(4 / zoomLevel, half * 0.4);
+        ctx.fillStyle = 'rgba(20,10,0,0.82)';
+        ctx.strokeStyle = isSelected ? '#fde68a' : hexColor;
+        ctx.lineWidth = (isSelected ? 2.5 : 1.8) / zoomLevel;
+        if (isSelected) ctx.setLineDash([5 / zoomLevel, 3 / zoomLevel]);
+        ctx.beginPath();
+        ctx.roundRect(px - half, py - half, sz, sz, bodyR);
+        ctx.fill();
+        ctx.stroke();
+        ctx.setLineDash([]);
+        const fs = Math.max(8, Math.min(sz * 0.56, 22 / zoomLevel));
+        ctx.font = `${fs}px serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('\uD83D\uDD25', px, py);
+        if (cs * zoomLevel > 20) {
+            const lfs = Math.max(6, Math.min(9, cs * 0.22 * zoomLevel));
+            const labelH = lfs + 3 / zoomLevel;
+            ctx.fillStyle = 'rgba(0,0,0,0.65)';
+            ctx.fillRect(px - half, py + half + 0.5 / zoomLevel, sz, labelH);
+            ctx.fillStyle = 'rgba(255,220,100,0.95)';
+            ctx.font = `${lfs}px Inter, sans-serif`;
+            const maxC = Math.max(2, Math.floor(sz / (lfs * 0.58)));
+            const lbl = ml.label || 'Luz';
+            ctx.fillText(lbl.length > maxC ? lbl.slice(0, maxC - 1) + '...' : lbl, px, py + half + labelH / 2 + 0.5 / zoomLevel);
+        }
+        // Lock icon overlay when locked
+        if (ml.locked) {
+            const lkFs = Math.max(6, Math.min(sz * 0.32, 12 / zoomLevel));
+            ctx.font = `${lkFs}px serif`;
+            ctx.textAlign = 'right';
+            ctx.textBaseline = 'top';
+            ctx.fillText('\uD83D\uDD12', px + half - 0.5 / zoomLevel, py - half + 0.5 / zoomLevel);
+        }
+
+        ctx.restore();
+    });
+}
+
+// Returns the rotation handle position in canvas pixel coords (before zoom/pan transform)
+function getRotHandleCanvasPos(token) {
+    const cs = GS();
+    const tx = token.x * cs;
+    const ty = token.y * cs;
+    const tw = token.widthInGrids * cs;
+    // handle fica no canto superior-direito, levemente fora do token
+    const OFFSET = Math.max(10, cs * 0.28);
+    return { hx: tx + tw + OFFSET * 0.5, hy: ty - OFFSET * 0.5, r: OFFSET * 0.72 };
+}
+
+// Hit-test: está o ponto de tela (sx,sy) sobre o handle do token?
+function hitRotHandle(token, sx, sy) {
+    const { hx, hy, r } = getRotHandleCanvasPos(token);
+    // converter para coordenadas de tela
+    const screenHx = hx * zoomLevel + panX;
+    const screenHy = hy * zoomLevel + panY;
+    const screenR  = r  * zoomLevel + 6; // margem de toque extra
+    return Math.hypot(sx - screenHx, sy - screenHy) <= screenR;
 }
 
 function drawTokens() {
@@ -2796,9 +3356,12 @@ function drawTokens() {
         const isSelected = selectedToken === token;
         const isEnemy = npc?.isEnemy;
 
+        // ── corpo rotacionado ──
+        const rotRad = ((token.rotation || 0) * Math.PI) / 180;
+        const cx = x + tw / 2, cy = y + th / 2;
         ctx.save();
+        if (rotRad !== 0) { ctx.translate(cx, cy); ctx.rotate(rotRad); ctx.translate(-cx, -cy); }
         const r = Math.min(3 / zoomLevel, tw / 4, th / 4);
-
         if (token.imageObj && token.imageObj.complete && token.imageObj.naturalWidth > 0) {
             ctx.beginPath();
             ctx.roundRect(x, y, tw, th, r);
@@ -2813,14 +3376,23 @@ function drawTokens() {
             ctx.fillStyle = isEnemy ? '#fca5a5' : '#93c5fd';
             ctx.font = `bold ${fs}px Inter`;
             ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-            ctx.fillText(npc?.name ? npc.name.substring(0,2).toUpperCase() : '?', x + tw/2, y + th/2);
+            ctx.fillText(npc?.name ? npc.name.substring(0,2).toUpperCase() : '?', cx, cy);
+        }
+        // Indicador de direção quando rotacionado
+        if (rotRad !== 0) {
+            ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+            ctx.lineWidth = 1.5 / zoomLevel;
+            ctx.beginPath();
+            ctx.moveTo(cx, cy);
+            ctx.lineTo(cx, y + 4 / zoomLevel);
+            ctx.stroke();
         }
         ctx.restore();
 
-        // HP bar
+        // HP bar (sempre upright) — posicionada logo acima da borda inferior, levantada para não conflitar
         if (npc?.hpMax > 0) {
             const bh = Math.max(3, cs * 0.09) / zoomLevel;
-            const by = y + th - bh - 1/zoomLevel;
+            const by = y + th - bh - 7/zoomLevel;
             const ratio = Math.max(0, Math.min(1, (npc.hpCurrent || 0) / npc.hpMax));
             ctx.fillStyle = 'rgba(0,0,0,0.55)';
             ctx.fillRect(x, by, tw, bh);
@@ -2828,7 +3400,7 @@ function drawTokens() {
             ctx.fillRect(x, by, tw * ratio, bh);
         }
 
-        // Name label
+        // Name label (sempre upright)
         if (npc?.name && cs * zoomLevel > 22) {
             const fs = Math.max(6, Math.min(9, cs * 0.22)) / zoomLevel;
             const labelH = fs + 4 / zoomLevel;
@@ -2839,19 +3411,38 @@ function drawTokens() {
             ctx.textAlign = 'center'; ctx.textBaseline = 'top';
             const maxChars = Math.max(2, Math.floor(tw / (fs * 0.58)));
             const displayName = npc.name.length > maxChars ? npc.name.substring(0, maxChars-1)+'…' : npc.name;
-            ctx.fillText(displayName, x + tw/2, y + th + 1.5/zoomLevel);
+            ctx.fillText(displayName, cx, y + th + 1.5/zoomLevel);
         }
 
-        // Selection highlight
+        // Selection highlight (upright)
         if (isSelected) {
             ctx.strokeStyle = '#fde68a';
             ctx.lineWidth = 2.5 / zoomLevel;
             ctx.setLineDash([5/zoomLevel, 3/zoomLevel]);
             ctx.strokeRect(x - 1.5/zoomLevel, y - 1.5/zoomLevel, tw + 3/zoomLevel, th + 3/zoomLevel);
             ctx.setLineDash([]);
+
+            // ── Rotation handle (canto superior-direito) ──
+            const { hx, hy, r: hr } = getRotHandleCanvasPos(token);
+            ctx.save();
+            ctx.strokeStyle = 'rgba(253,230,138,0.45)';
+            ctx.lineWidth = 1 / zoomLevel;
+            ctx.setLineDash([3/zoomLevel, 3/zoomLevel]);
+            ctx.beginPath(); ctx.moveTo(x + tw, y); ctx.lineTo(hx, hy); ctx.stroke();
+            ctx.setLineDash([]);
+            ctx.beginPath(); ctx.arc(hx, hy, hr, 0, Math.PI * 2);
+            ctx.fillStyle = isRotating ? 'rgba(167,139,250,0.88)' : 'rgba(13,17,23,0.92)';
+            ctx.fill();
+            ctx.strokeStyle = isRotating ? '#c4b5fd' : '#fde68a';
+            ctx.lineWidth = 1.5 / zoomLevel; ctx.stroke();
+            ctx.fillStyle = isRotating ? '#fff' : '#fde68a';
+            ctx.font = `bold ${Math.max(7, hr * 1.2)}px serif`;
+            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.fillText('↻', hx, hy + 0.5 / zoomLevel);
+            ctx.restore();
         }
 
-        // Enemy border (only when not selected)
+        // Enemy border (upright, only when not selected)
         if (isEnemy && !isSelected) {
             ctx.strokeStyle = 'rgba(239,68,68,0.6)';
             ctx.lineWidth = 2 / zoomLevel;
@@ -2879,7 +3470,7 @@ function drawTokensFiltered(visibleSet) {
             // Inimigo: verifica se ao menos 1 célula ocupada está visível
             outer: for (let dc = 0; dc < token.widthInGrids; dc++) {
                 for (let dr = 0; dr < token.heightInGrids; dr++) {
-                    if (visibleSet.has(`${token.x + dc},${token.y + dr}`)) {
+                    if (visibleSet.has(`${Math.floor(token.x) + dc},${Math.floor(token.y) + dr}`)) {
                         visible = true;
                         break outer;
                     }
@@ -2893,9 +3484,12 @@ function drawTokensFiltered(visibleSet) {
         const x = token.x * cs, y = token.y * cs;
         const isSelected = selectedToken === token;
 
+        // ── corpo rotacionado ──
+        const rotRad2 = ((token.rotation || 0) * Math.PI) / 180;
+        const cx2 = x + tw / 2, cy2 = y + th / 2;
         ctx.save();
+        if (rotRad2 !== 0) { ctx.translate(cx2, cy2); ctx.rotate(rotRad2); ctx.translate(-cx2, -cy2); }
         const r = Math.min(3 / zoomLevel, tw / 4, th / 4);
-
         if (token.imageObj && token.imageObj.complete && token.imageObj.naturalWidth > 0) {
             ctx.beginPath();
             ctx.roundRect(x, y, tw, th, r);
@@ -2910,13 +3504,18 @@ function drawTokensFiltered(visibleSet) {
             ctx.fillStyle = isEnemy ? '#fca5a5' : '#93c5fd';
             ctx.font = `bold ${fs}px Inter`;
             ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-            ctx.fillText(npc?.name ? npc.name.substring(0,2).toUpperCase() : '?', x + tw/2, y + th/2);
+            ctx.fillText(npc?.name ? npc.name.substring(0,2).toUpperCase() : '?', cx2, cy2);
+        }
+        if (rotRad2 !== 0) {
+            ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+            ctx.lineWidth = 1.5 / zoomLevel;
+            ctx.beginPath(); ctx.moveTo(cx2, cy2); ctx.lineTo(cx2, y + 4 / zoomLevel); ctx.stroke();
         }
         ctx.restore();
 
         if (npc?.hpMax > 0) {
             const bh = Math.max(3, cs * 0.09) / zoomLevel;
-            const by = y + th - bh - 1/zoomLevel;
+            const by = y + th - bh - 7/zoomLevel;
             const ratio = Math.max(0, Math.min(1, (npc.hpCurrent || 0) / npc.hpMax));
             ctx.fillStyle = 'rgba(0,0,0,0.55)';
             ctx.fillRect(x, by, tw, bh);
@@ -2934,7 +3533,7 @@ function drawTokensFiltered(visibleSet) {
             ctx.textAlign = 'center'; ctx.textBaseline = 'top';
             const maxChars = Math.max(2, Math.floor(tw / (fs * 0.58)));
             const displayName = npc.name.length > maxChars ? npc.name.substring(0, maxChars-1)+'…' : npc.name;
-            ctx.fillText(displayName, x + tw/2, y + th + 1.5/zoomLevel);
+            ctx.fillText(displayName, cx2, y + th + 1.5/zoomLevel);
         }
 
         if (isSelected) {
@@ -2943,6 +3542,23 @@ function drawTokensFiltered(visibleSet) {
             ctx.setLineDash([5/zoomLevel, 3/zoomLevel]);
             ctx.strokeRect(x - 1.5/zoomLevel, y - 1.5/zoomLevel, tw + 3/zoomLevel, th + 3/zoomLevel);
             ctx.setLineDash([]);
+            // ── Rotation handle ──
+            const { hx: hx2, hy: hy2, r: hr2 } = getRotHandleCanvasPos(token);
+            ctx.save();
+            ctx.strokeStyle = 'rgba(253,230,138,0.45)';
+            ctx.lineWidth = 1/zoomLevel; ctx.setLineDash([3/zoomLevel,3/zoomLevel]);
+            ctx.beginPath(); ctx.moveTo(x+tw,y); ctx.lineTo(hx2,hy2); ctx.stroke();
+            ctx.setLineDash([]);
+            ctx.beginPath(); ctx.arc(hx2, hy2, hr2, 0, Math.PI*2);
+            ctx.fillStyle = isRotating ? 'rgba(167,139,250,0.88)' : 'rgba(13,17,23,0.92)';
+            ctx.fill();
+            ctx.strokeStyle = isRotating ? '#c4b5fd' : '#fde68a';
+            ctx.lineWidth = 1.5/zoomLevel; ctx.stroke();
+            ctx.fillStyle = isRotating ? '#fff' : '#fde68a';
+            ctx.font = `bold ${Math.max(7,hr2*1.2)}px serif`;
+            ctx.textAlign='center'; ctx.textBaseline='middle';
+            ctx.fillText('↻', hx2, hy2 + 0.5/zoomLevel);
+            ctx.restore();
         }
         if (isEnemy && !isSelected) {
             ctx.strokeStyle = 'rgba(239,68,68,0.6)';
@@ -3107,20 +3723,25 @@ function resizeCanvasAndDraw() {
 }
 
 function drawCanvas() {
+    let visibleSet = null;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.save();
     ctx.translate(panX, panY);
     ctx.scale(zoomLevel, zoomLevel);
     drawGrid();
+    drawWalls();
     drawAllDrawings();
+    drawLightTokens();
 
     // ── Fog of War ────────────────────────────────────────────
     if (fowEnabled) {
-        const visibleSet = computeVisibleCells();
+        visibleSet = computeVisibleCells();
         updateFowExplored(visibleSet);
         saveFowExplored();
 
-        if (fowGmReveal) {
+        // Jogadores (clientes P2P) sempre ficam no modo Player, independente de fowGmReveal
+        const _renderAsGm = fowGmReveal && (isHost || myRole === null);
+        if (_renderAsGm) {
             drawTokens();
             drawFow(visibleSet);
             drawFowRadiiHelpers(visibleSet);
@@ -3136,9 +3757,20 @@ function drawCanvas() {
     drawRuler();
     ctx.restore();
 
-    // ── WebGL Lighting (after 2D restore, composited on top) ──
-    if (glEnabled) renderLighting();
+    // ── WebGL Lighting (composited via Canvas 2D — iOS Safari compatible) ──
+    if (glEnabled) {
+        renderLighting(visibleSet);
+        // Draw the WebGL result onto the 2D canvas using multiply blend
+        // This avoids CSS mix-blend-mode which doesn't work on iOS Safari canvas
+        ctx.save();
+        ctx.globalCompositeOperation = 'multiply';
+        ctx.drawImage(lightingCanvas, 0, 0);
+        ctx.restore();
+    }
     // ─────────────────────────────────────────────────────────
+
+    // Reposicionar menu de controles acima do token selecionado
+    positionTokenControlsMenu();
 }
 
 function applyZoom(factor, cx, cy) {
@@ -3193,7 +3825,7 @@ function addTokenToCanvas() {
     broadcast({
         type: 'token_add',
         token: { id:newToken.id, npcId:newToken.npcId, x:newToken.x, y:newToken.y, widthInGrids:newToken.widthInGrids, heightInGrids:newToken.heightInGrids },
-        npc: { id:currentNpcId, name:npcData?.name||'', type:npcData?.type||'', hpMax:npcData?.hpMax||0, hpCurrent:npcData?.hpCurrent||0, isEnemy:!!npcData?.isEnemy, initiative:npcData?.initiative||0, stats:npcData?.stats||'', description:npcData?.description||'' }
+        npc: { id:currentNpcId, name:npcData?.name||'', type:npcData?.type||'', hpMax:npcData?.hpMax||0, hpCurrent:npcData?.hpCurrent||0, isEnemy:!!npcData?.isEnemy, initiative:npcData?.initiative||0, stats:npcData?.stats||'', description:npcData?.description||'', visionRadius:npcData?.visionRadius??6, lightRadius:npcData?.lightRadius||0, lightColor:npcData?.lightColor||'#ffaa44', lightIntensity:npcData?.lightIntensity??1.0 }
     });
     // Send image chunks separately if image exists
     if (npcData?.tokenImageBase64) {
@@ -3244,7 +3876,7 @@ hpModalSave.addEventListener('click', () => {
             npcHpMaxInput.value = npc.hpMax;
             npcHpCurrentInput.value = npc.hpCurrent;
         }
-        saveStateToStorage(); renderNpcList(); drawCanvas();
+        saveStateToStorage(); renderNpcList(); renderTokenLightList(); drawCanvas();
         broadcast({ type:'hp_update', npcId:hpEditToken.npcId, hpCurrent:npc.hpCurrent, hpMax:npc.hpMax });
     }
     hpModal.classList.add('hidden'); hpEditToken = null;
@@ -3254,20 +3886,28 @@ hpModalCancel.addEventListener('click', () => { hpModal.classList.add('hidden');
 // ============================================================
 //   CANVAS EVENTS
 // ============================================================
+function getClientPos(e) {
+    // Returns raw clientX/clientY for both mouse and touch events
+    if (e.touches?.length > 0) return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    if (e.changedTouches?.length > 0) return { x: e.changedTouches[0].clientX, y: e.changedTouches[0].clientY };
+    return { x: e.clientX, y: e.clientY };
+}
+
 function getCanvasPos(e) {
     const r = canvas.getBoundingClientRect();
-    if (e.touches?.length > 0) return { x: e.touches[0].clientX - r.left, y: e.touches[0].clientY - r.top };
-    return { x: e.clientX - r.left, y: e.clientY - r.top };
+    const c = getClientPos(e);
+    return { x: c.x - r.left, y: c.y - r.top };
 }
 
 function onPointerDown(e) {
     const isRightBtn = e.button === 2 || e.which === 3;
     const isMiddle = e.button === 1;
-    if (isRightBtn || isMiddle) {
+    if((isRightBtn||isMiddle)&&currentTool!=='wall'){
         e.preventDefault();
-        isPanning = true;
-        lastMouseX = e.clientX;
-        lastMouseY = e.clientY;
+        isPanning=true;
+        const cp0 = getClientPos(e);
+        lastMouseX = cp0.x;
+        lastMouseY = cp0.y;
         canvas.classList.add('cur-grabbing');
         return;
     }
@@ -3275,21 +3915,65 @@ function onPointerDown(e) {
     const pos = getCanvasPos(e);
     const world = screenToWorld(pos.x, pos.y);
 
+    if (currentTool === 'pan') {
+        e.preventDefault();
+        isPanning = true;
+        const cp = getClientPos(e);
+        lastMouseX = cp.x;
+        lastMouseY = cp.y;
+        canvas.classList.add('cur-grabbing');
+        return;
+    }
+
     if (currentTool === 'move') {
         let found = false;
+        // Light tokens first
+        for (let i = manualLights.length - 1; i >= 0; i--) {
+            const ml = manualLights[i];
+            if (world.x >= ml.x && world.x < ml.x + 1 && world.y >= ml.y && world.y < ml.y + 1) {
+                selectedLightToken = ml;
+                selectedToken = null;
+                if (!ml.locked) {
+                    lightDragOffsetX = world.x - ml.x;
+                    lightDragOffsetY = world.y - ml.y;
+                    ml.isDragging = true;
+                }
+                renderManualLightList();
+                drawCanvas();
+                updateTokenControlsState();
+                return;
+            }
+        }
+        // ── Verificar handle de rotação ANTES de mover ──
+        if (selectedToken && hitRotHandle(selectedToken, pos.x, pos.y)) {
+            isRotating = true;
+            const cs2 = GS();
+            const rcx = (selectedToken.x + selectedToken.widthInGrids  / 2) * cs2 * zoomLevel + panX;
+            const rcy = (selectedToken.y + selectedToken.heightInGrids / 2) * cs2 * zoomLevel + panY;
+            rotStartAngle    = Math.atan2(pos.y - rcy, pos.x - rcx);
+            rotStartTokenRot = selectedToken.rotation || 0;
+            canvas.classList.add('cur-grabbing');
+            drawCanvas();
+            return;
+        }
+
+        // NPC tokens
         for (let i = tokens.length-1; i >= 0; i--) {
             const t = tokens[i];
             if (world.x >= t.x && world.x < t.x+t.widthInGrids && world.y >= t.y && world.y < t.y+t.heightInGrids) {
                 selectedToken = t;
-                t.isDragging = true;
-                dragOffsetX = world.x - t.x;
-                dragOffsetY = world.y - t.y;
+                selectedLightToken = null;
+                if (true) {
+                    t.isDragging = true;
+                    dragOffsetX = world.x - t.x;
+                    dragOffsetY = world.y - t.y;
+                    tokens.splice(i,1); tokens.push(t);
+                }
                 found = true;
-                tokens.splice(i,1); tokens.push(t);
                 break;
             }
         }
-        if (!found) selectedToken = null;
+        if (!found) { selectedToken = null; selectedLightToken = null; }
     } else if (currentTool === 'ruler' || currentTool === 'cone') {
         rulerMode = currentTool === 'cone' ? 'cone' : 'line';
         rulerStart = { x:world.x, y:world.y }; rulerEnd = { ...rulerStart };
@@ -3297,6 +3981,11 @@ function onPointerDown(e) {
         drawingStart = { x:world.x, y:world.y }; drawingEnd = { ...drawingStart };
     } else if (currentTool === 'eraser') {
         eraseAt(world);
+    } else if (currentTool==='wall') {
+        if(isRightBtn){e.preventDefault();eraseWallAt(world);}
+        else{wallStart={x:world.x,y:world.y};wallEnd={x:world.x,y:world.y};}
+    } else if (currentTool==='wall-eraser') {
+        eraseWallAt(world);
     }
 
     drawCanvas();
@@ -3305,6 +3994,28 @@ function onPointerDown(e) {
 
 function onPointerMove(e) {
     const pos = getCanvasPos(e);
+
+    // ── Rotação via handle ──
+    if (isRotating && selectedToken) {
+        const cs3 = GS();
+        const rcx3 = (selectedToken.x + selectedToken.widthInGrids  / 2) * cs3 * zoomLevel + panX;
+        const rcy3 = (selectedToken.y + selectedToken.heightInGrids / 2) * cs3 * zoomLevel + panY;
+        const curAngle = Math.atan2(pos.y - rcy3, pos.x - rcx3);
+        const delta3 = curAngle - rotStartAngle;
+        selectedToken.rotation = ((rotStartTokenRot + delta3 * 180 / Math.PI) % 360 + 360) % 360;
+        broadcast({ type: 'token_rotate', tokenId: selectedToken.id, rotation: selectedToken.rotation });
+        drawCanvas();
+        return;
+    }
+
+    // ── Cursor hover sobre handle ──
+    if (currentTool === 'move' && selectedToken && !selectedToken.isDragging && !isRotating) {
+        if (hitRotHandle(selectedToken, pos.x, pos.y)) {
+            canvas.style.cursor = 'crosshair';
+        } else {
+            canvas.style.cursor = '';
+        }
+    }
     const world = screenToWorld(pos.x, pos.y);
     const gx = Math.floor(world.x), gy = Math.floor(world.y);
 
@@ -3317,27 +4028,43 @@ function onPointerMove(e) {
     }
 
     if (isPanning) {
-        panX += e.clientX - lastMouseX;
-        panY += e.clientY - lastMouseY;
-        lastMouseX = e.clientX; lastMouseY = e.clientY;
+        const cp1 = getClientPos(e);
+        panX += cp1.x - lastMouseX;
+        panY += cp1.y - lastMouseY;
+        lastMouseX = cp1.x; lastMouseY = cp1.y;
         resizeCanvasAndDraw();
         return;
     }
 
-    if (currentTool === 'move' && selectedToken?.isDragging) {
+    if (currentTool === 'move' && selectedLightToken?.isDragging) {
+        let nx = world.x - lightDragOffsetX;
+        let ny = world.y - lightDragOffsetY;
+        nx = Math.max(0, Math.min(nx, mapSettings.gridCols - 1));
+        ny = Math.max(0, Math.min(ny, mapSettings.gridRows - 1));
+        selectedLightToken.x = nx;
+        selectedLightToken.y = ny;
+        drawCanvas();
+    } else if (currentTool === 'move' && selectedToken?.isDragging) {
         const tw = selectedToken.widthInGrids, th = selectedToken.heightInGrids;
-        let nx = Math.floor(world.x - dragOffsetX);
-        let ny = Math.floor(world.y - dragOffsetY);
+        let nx = world.x - dragOffsetX;
+        let ny = world.y - dragOffsetY;
         nx = Math.max(0, Math.min(nx, mapSettings.gridCols - tw));
         ny = Math.max(0, Math.min(ny, mapSettings.gridRows - th));
-        const overlaps = tokens.some(ot => ot.id !== selectedToken.id &&
-            nx < ot.x+ot.widthInGrids && nx+tw > ot.x && ny < ot.y+ot.heightInGrids && ny+th > ot.y);
-        if (!overlaps) { selectedToken.x = nx; selectedToken.y = ny; }
+        if(walls.length===0||(isHost||myRole===null)){
+            selectedToken.x=nx;selectedToken.y=ny;
+        }else{
+            const ocx=selectedToken.x+(selectedToken.widthInGrids||1)/2;
+            const ocy=selectedToken.y+(selectedToken.heightInGrids||1)/2;
+            if(hasLoS(ocx,ocy,nx+(selectedToken.widthInGrids||1)/2,ny+(selectedToken.heightInGrids||1)/2))
+                {selectedToken.x=nx;selectedToken.y=ny;}
+        }
         drawCanvas();
     } else if ((currentTool === 'ruler' || currentTool === 'cone') && rulerStart) {
         rulerEnd = { x:world.x, y:world.y }; drawCanvas();
     } else if (currentTool === 'draw-line' && drawingStart) {
-        drawingEnd = { x:world.x, y:world.y }; drawCanvas();
+        drawingEnd={x:world.x,y:world.y};drawCanvas();
+    } else if (currentTool==='wall'&&wallStart&&e.buttons===1) {
+        wallEnd={x:world.x,y:world.y};drawCanvas();
     } else if (currentTool === 'eraser' && e.buttons === 1) {
         eraseAt(world);
     }
@@ -3361,12 +4088,36 @@ function eraseAt(world) {
 }
 
 function onPointerUp(e) {
-    if (isPanning) { isPanning = false; canvas.classList.remove('cur-grabbing'); }
+    // ── Finalizar rotação ──
+    if (isRotating) {
+        isRotating = false;
+        canvas.classList.remove('cur-grabbing');
+        if (selectedToken) {
+            saveToUndo();
+            saveStateToStorage();
+            broadcast({ type: 'token_rotate', tokenId: selectedToken.id, rotation: selectedToken.rotation });
+        }
+        drawCanvas();
+        return;
+    }
+
+    if (isPanning) {
+        isPanning = false;
+        canvas.classList.remove('cur-grabbing');
+        if (currentTool === 'pan') canvas.classList.add('cur-grab');
+    }
+    if (currentTool === 'move' && selectedLightToken?.isDragging) {
+        selectedLightToken.isDragging = false;
+        saveStateToStorage();
+        broadcast({ type: 'gl_manual_lights', manualLights });
+        renderManualLightList();
+        drawCanvas();
+    }
     if (currentTool === 'move' && selectedToken?.isDragging) {
         selectedToken.isDragging = false;
         saveToUndo();
         saveStateToStorage();
-        broadcast({ type:'token_move', tokenId:selectedToken.id, x:selectedToken.x, y:selectedToken.y });
+        broadcast({ type:'token_move', tokenId:selectedToken.id, x:selectedToken.x, y:selectedToken.y, rotation: selectedToken.rotation || 0 });
         // Sync FoW explored cells after token repositioning
         if (fowEnabled) {
             broadcast({ type:'fow_explored', explored: fowExplored });
@@ -3380,7 +4131,16 @@ function onPointerUp(e) {
             saveStateToStorage();
             broadcast({ type:'drawing_add', drawing:newDrawing });
         }
-        drawingStart = null; drawingEnd = null;
+        drawingStart=null;drawingEnd=null;
+    }
+    if(currentTool==='wall'&&wallStart&&wallEnd){
+        if(Math.hypot(wallEnd.x-wallStart.x,wallEnd.y-wallStart.y)>0.1){
+            const nw={id:`w_${Date.now()}`,x1:wallStart.x,y1:wallStart.y,x2:wallEnd.x,y2:wallEnd.y};
+            walls.push(nw);
+            broadcast({type:'wall_add',wall:nw});
+            saveStateToStorage();showFeedback('Parede adicionada','info');
+        }
+        wallStart=null;wallEnd=null;
     }
     drawCanvas();
     updateTokenControlsState();
@@ -3390,16 +4150,55 @@ canvas.addEventListener('mousedown', onPointerDown);
 canvas.addEventListener('mousemove', onPointerMove);
 canvas.addEventListener('mouseup', onPointerUp);
 canvas.addEventListener('mouseleave', () => {
-    if (isPanning) { isPanning = false; canvas.classList.remove('cur-grabbing'); }
+    if (isPanning) {
+        isPanning = false;
+        canvas.classList.remove('cur-grabbing');
+        if (currentTool === 'pan') canvas.classList.add('cur-grab');
+    }
     coordDisplay.style.display = 'none';
     if (currentTool === 'draw-line' && drawingStart) { drawingStart=null; drawingEnd=null; drawCanvas(); }
 });
 canvas.addEventListener('contextmenu', e => e.preventDefault());
 
-// Touch support
-canvas.addEventListener('touchstart', e => { e.preventDefault(); onPointerDown(e); }, { passive:false });
-canvas.addEventListener('touchmove', e => { e.preventDefault(); onPointerMove(e); }, { passive:false });
-canvas.addEventListener('touchend', e => { e.preventDefault(); onPointerUp(e); }, { passive:false });
+// Touch support with pinch-to-zoom
+let lastTouchDist = null;
+
+canvas.addEventListener('touchstart', e => {
+    e.preventDefault();
+    if (e.touches.length === 2) {
+        // Two fingers: start pinch-zoom, cancel any dragging
+        lastTouchDist = Math.hypot(
+            e.touches[0].clientX - e.touches[1].clientX,
+            e.touches[0].clientY - e.touches[1].clientY
+        );
+        if (selectedToken) { selectedToken.isDragging = false; }
+        isPanning = false;
+    } else {
+        lastTouchDist = null;
+        onPointerDown(e);
+    }
+}, { passive:false });
+
+canvas.addEventListener('touchmove', e => {
+    e.preventDefault();
+    if (e.touches.length === 2 && lastTouchDist !== null) {
+        // Pinch-to-zoom centered on midpoint of two fingers
+        const newDist = Math.hypot(
+            e.touches[0].clientX - e.touches[1].clientX,
+            e.touches[0].clientY - e.touches[1].clientY
+        );
+        const factor = newDist / lastTouchDist;
+        lastTouchDist = newDist;
+        const r = canvas.getBoundingClientRect();
+        const mx = (e.touches[0].clientX + e.touches[1].clientX) / 2 - r.left;
+        const my = (e.touches[0].clientY + e.touches[1].clientY) / 2 - r.top;
+        applyZoom(factor, mx, my);
+    } else {
+        onPointerMove(e);
+    }
+}, { passive:false });
+
+canvas.addEventListener('touchend', e => { e.preventDefault(); lastTouchDist = null; onPointerUp(e); }, { passive:false });
 
 // Scroll to zoom (centered on cursor)
 canvas.addEventListener('wheel', e => {
@@ -3408,6 +4207,81 @@ canvas.addEventListener('wheel', e => {
     applyZoom(e.deltaY < 0 ? ZOOM_FACTOR : 1/ZOOM_FACTOR, e.clientX - r.left, e.clientY - r.top);
 }, { passive:false });
 
+// Page Visibility API — resync when device wakes / tab comes back
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && !isHost && myRole !== null) {
+        if (connections.length > 0 && connections[0].open) {
+            setTimeout(() => connSend(connections[0], { type: 'request_sync' }), 500);
+        } else if (_clientHostPeerId) {
+            scheduleClientReconnect(_clientHostPeerId);
+        }
+    }
+});
+
+// ============================================================
+//   SCROLL FADE INDICATORS
+// ============================================================
+function initScrollFade(wrapId, bodyId) {
+    const wrap = document.getElementById(wrapId);
+    const body = document.getElementById(bodyId);
+    if (!wrap || !body) return;
+    const update = () => {
+        const atBottom = body.scrollHeight - body.scrollTop <= body.clientHeight + 6;
+        wrap.classList.toggle('at-bottom', atBottom);
+    };
+    body.addEventListener('scroll', update, { passive: true });
+    new MutationObserver(update).observe(body, { childList: true, subtree: true });
+    update();
+}
+function initAllScrollFades() {
+    initScrollFade('npcScrollWrap',       'npcScrollBody');
+    initScrollFade('npcDetailScrollWrap', 'npcDetailScrollBody');
+}
+
+// ============================================================
+//   RESYNC P2P
+// ============================================================
+let _pendingResyncStatus = false;
+let _lastResync = 0;
+
+function updateResyncUI() {
+    const btn    = document.getElementById('resyncBtn');
+    const hint   = document.getElementById('resyncHint');
+    const status = document.getElementById('resyncStatus');
+    if (!btn || !hint) return;
+    const connected = connections.filter(c => c && c.open).length;
+    if (isHost) {
+        hint.textContent   = connected > 0 ? `Reenvia todo o estado para ${connected} jogador(es).` : 'Nenhum jogador conectado.';
+        btn.disabled       = connected === 0;
+        status.textContent = connected > 0 ? `🟢 ${connected} online` : '⚫ sem conexões';
+    } else {
+        const hasConn      = connections.length > 0 && connections[0].open;
+        hint.textContent   = hasConn ? 'Solicita ao Mestre o estado completo do mapa.' : 'Você não está conectado ao Mestre.';
+        btn.disabled       = !hasConn;
+        status.textContent = hasConn ? '🟢 conectado' : '🔴 desconectado';
+    }
+}
+
+document.getElementById('resyncBtn')?.addEventListener('click', () => {
+    const now = Date.now();
+    if (now - _lastResync < 3000) { showFeedback('Aguarde alguns segundos.', 'error'); return; }
+    _lastResync = now;
+    const status = document.getElementById('resyncStatus');
+    if (isHost) {
+        const active = connections.filter(c => c && c.open);
+        if (!active.length) { showFeedback('Nenhum jogador conectado.', 'error'); return; }
+        broadcastFullState();
+        showFeedback(`🔄 Estado enviado para ${active.length} jogador(es)!`, 'success');
+        if (status) status.textContent = `✅ enviado ${new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit',second:'2-digit'})}`;
+    } else {
+        if (!connections.length || !connections[0].open) { showFeedback('Sem conexão com o Mestre.', 'error'); return; }
+        connSend(connections[0], { type: 'request_sync' });
+        showFeedback('🔄 Resync solicitado…', 'info');
+        _pendingResyncStatus = true;
+        if (status) status.textContent = '⏳ aguardando…';
+    }
+});
+
 // Keyboard shortcuts
 document.addEventListener('keydown', e => {
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
@@ -3415,17 +4289,31 @@ document.addEventListener('keydown', e => {
     if (ctrl && e.key.toLowerCase() === 'z' && !e.shiftKey) { e.preventDefault(); undo(); }
     else if (ctrl && (e.key.toLowerCase() === 'y' || (e.shiftKey && e.key.toLowerCase() === 'z'))) { e.preventDefault(); redo(); }
     else if (e.key === 'm' || e.key === 'M') setTool('move');
+    else if (e.key === 'p' || e.key === 'P') setTool('pan');
     else if (e.key === 'r' || e.key === 'R') setTool('ruler');
     else if (e.key === 'c' || e.key === 'C') setTool('cone');
     else if (e.key === 'd' || e.key === 'D') setTool('draw-line');
     else if (e.key === 'e' || e.key === 'E') setTool('eraser');
+    else if((e.key==='w'||e.key==='W')&&(isHost||myRole===null))setTool(currentTool==='wall'?'move':'wall');
+
     else if (e.key === 'f' || e.key === 'F') {
         if (envPanelOpen) closeEnvPanel(); else openEnvPanel();
     }
     else if (e.key === '+' || e.key === '=') applyZoom(ZOOM_FACTOR, canvas.width/2, canvas.height/2);
     else if (e.key === '-') applyZoom(1/ZOOM_FACTOR, canvas.width/2, canvas.height/2);
-    else if (e.key === 'Delete' && selectedToken) deleteSelectedToken();
-    else if (e.key === 'Escape') { selectedToken=null; updateTokenControlsState(); drawCanvas(); }
+    else if (e.key === 'Delete') {
+        if (selectedLightToken && !selectedLightToken.locked) { deleteManualLight(selectedLightToken.id); selectedLightToken = null; drawCanvas(); } else if (selectedLightToken?.locked) { showFeedback('🔒 Desbloqueie a luz antes de deletar.', 'error'); }
+        else if (selectedToken) deleteSelectedToken();
+    }
+    else if (e.key === 'Escape') { selectedToken = null; selectedLightToken = null; updateTokenControlsState(); drawCanvas(); }
+    else if (!e.ctrlKey && !e.metaKey) {
+        // Arrow keys / WASD camera pan (always active, 60px per press)
+        const PAN_STEP = 60;
+        if (e.key === 'ArrowLeft')  { panX += PAN_STEP; resizeCanvasAndDraw(); e.preventDefault(); }
+        else if (e.key === 'ArrowRight') { panX -= PAN_STEP; resizeCanvasAndDraw(); e.preventDefault(); }
+        else if (e.key === 'ArrowUp')    { panY += PAN_STEP; resizeCanvasAndDraw(); e.preventDefault(); }
+        else if (e.key === 'ArrowDown')  { panY -= PAN_STEP; resizeCanvasAndDraw(); e.preventDefault(); }
+    }
 });
 
 // ============================================================
@@ -3436,6 +4324,7 @@ function setTool(tool) {
     currentTool = tool;
     if (tool !== 'ruler' && tool !== 'cone') { rulerStart=null; rulerEnd=null; }
     if (tool !== 'draw-line') { drawingStart=null; drawingEnd=null; }
+    if (tool !== 'wall' && tool !== 'wall-eraser') { wallStart=null; wallEnd=null; }
     updateToolButtonsState();
     if (prev !== tool) drawCanvas();
     canvas.className = '';
@@ -3443,37 +4332,113 @@ function setTool(tool) {
         tool === 'ruler' || tool === 'cone' || tool === 'draw-line' || tool === 'eraser'
             ? 'cur-crosshair' : 'cur-grab'
     );
+    // Pan tool: show grab cursor always
+    if (tool === 'pan') {
+        canvas.className = '';
+        canvas.classList.add('cur-grab');
+    }
 }
 
-function updateToolButtonsState() {
-    [moveToolBtn, rulerBtn, coneBtn, drawLineBtn, eraserBtn].forEach(b => b?.classList.remove('active-tool'));
-    const map = { move:moveToolBtn, ruler:rulerBtn, cone:coneBtn, 'draw-line':drawLineBtn, eraser:eraserBtn };
-    if (map[currentTool]) map[currentTool].classList.add('active-tool');
+function updateToolButtonsState(){
+    [moveToolBtn,panToolBtn,rulerBtn,coneBtn,drawLineBtn,eraserBtn].forEach(b=>b?.classList.remove('active-tool'));
+    if(wallBtn)wallBtn.classList.remove('wall-active');
+    const map={move:moveToolBtn,pan:panToolBtn,ruler:rulerBtn,cone:coneBtn,'draw-line':drawLineBtn,eraser:eraserBtn};
+    if(map[currentTool])map[currentTool].classList.add('active-tool');
+    if(currentTool==='wall'&&wallBtn)wallBtn.classList.add('wall-active');
+}
+
+function positionTokenControlsMenu() {
+    if (!selectedToken || tokenMapControls.classList.contains('hidden')) return;
+    const cs = GS();
+    const canvasRect = canvas.getBoundingClientRect();
+    const parentRect = tokenMapControls.parentElement.getBoundingClientRect();
+    const canvasLeft = canvasRect.left - parentRect.left;
+    const canvasTop  = canvasRect.top  - parentRect.top;
+
+    const tokenScreenLeft  = selectedToken.x * cs * zoomLevel + panX;
+    const tokenScreenTop   = selectedToken.y * cs * zoomLevel + panY;
+    const tokenScreenW     = selectedToken.widthInGrids  * cs * zoomLevel;
+    const tokenScreenH     = selectedToken.heightInGrids * cs * zoomLevel;
+
+    const menuW = tokenMapControls.offsetWidth  || 300;
+    const menuH = tokenMapControls.offsetHeight || 50;
+    const GAP   = 10;
+
+    let left = canvasLeft + tokenScreenLeft + tokenScreenW / 2 - menuW / 2;
+    let top  = canvasTop  + tokenScreenTop - menuH - GAP;
+
+    // Se sair pelo topo, mostrar abaixo do token
+    if (top < 4) top = canvasTop + tokenScreenTop + tokenScreenH + GAP;
+
+    // Clampar horizontalmente
+    const maxLeft = parentRect.width - menuW - 8;
+    left = Math.max(8, Math.min(left, maxLeft));
+
+    tokenMapControls.style.left      = left + 'px';
+    tokenMapControls.style.top       = top  + 'px';
+    tokenMapControls.style.transform = 'none';
 }
 
 function updateTokenControlsState() {
     if (selectedToken) {
         tokenMapControls.classList.remove('hidden');
         selectedTokenLabel.textContent = npcs[selectedToken.npcId]?.name || 'Token';
+        // Pequeno delay para o menu estar visível antes de calcular dimensões
+        requestAnimationFrame(positionTokenControlsMenu);
     } else {
         tokenMapControls.classList.add('hidden');
+
     }
 }
 
 // ============================================================
 //   SIDEBAR TOGGLES
 // ============================================================
+function updateToolsDrawerUI() {
+    if (!mapControlsOverlay || !toolsDrawerBtn) return;
+    mapControlsOverlay.classList.toggle('tools-collapsed', !toolsDrawerOpen);
+    toolsDrawerBtn.classList.toggle('open', toolsDrawerOpen);
+    toolsDrawerBtn.textContent = toolsDrawerOpen ? '▼' : '⚒ FERRAMENTAS';
+
+    if (toolsDrawerOpen) {
+        // Posiciona a seta no canto direito da barra de ferramentas
+        requestAnimationFrame(() => {
+            const bar = mapControlsOverlay.getBoundingClientRect();
+            const btn = toolsDrawerBtn;
+            btn.style.left = '';
+            btn.style.transform = '';
+            btn.style.right = (window.innerWidth - bar.right) + 'px';
+        });
+    } else {
+        toolsDrawerBtn.style.left = '50%';
+        toolsDrawerBtn.style.right = '';
+        toolsDrawerBtn.style.transform = 'translateX(-50%)';
+    }
+}
+
+function openToolsDrawer() {
+    toolsDrawerOpen = true;
+    updateToolsDrawerUI();
+}
+
+function closeToolsDrawer() {
+    toolsDrawerOpen = false;
+    updateToolsDrawerUI();
+}
+
 function updateToggleButtonPositions() {
     const sw = 280;
     const lc = npcSidebar.classList.contains('collapsed');
     const rc = npcDetailPanel.classList.contains('collapsed');
     toggleNpcListBtn.style.left = lc ? '0' : `${sw}px`;
+
     toggleNpcDetailBtn.style.right = rc ? '0' : `${sw}px`;
 }
 
 toggleNpcListBtn.addEventListener('click', () => {
     npcSidebar.classList.toggle('collapsed');
     toggleNpcListBtn.innerHTML = npcSidebar.classList.contains('collapsed') ? '▶' : '◀';
+
     updateToggleButtonPositions();
     setTimeout(resizeCanvasAndDraw, 270);
 });
@@ -3489,10 +4454,22 @@ toggleNpcDetailBtn.addEventListener('click', () => {
 //   TOOL BUTTON LISTENERS
 // ============================================================
 moveToolBtn.addEventListener('click', () => setTool('move'));
+panToolBtn.addEventListener('click', () => setTool(currentTool === 'pan' ? 'move' : 'pan'));
 rulerBtn.addEventListener('click', () => setTool(currentTool === 'ruler' ? 'move' : 'ruler'));
 coneBtn.addEventListener('click', () => setTool(currentTool === 'cone' ? 'move' : 'cone'));
 drawLineBtn.addEventListener('click', () => setTool(currentTool === 'draw-line' ? 'move' : 'draw-line'));
-eraserBtn.addEventListener('click', () => setTool(currentTool === 'eraser' ? 'move' : 'eraser'));
+eraserBtn.addEventListener('click',()=>setTool(currentTool==='eraser'?'move':'eraser'));
+if(wallBtn)       wallBtn.addEventListener('click',()=>setTool(currentTool==='wall'?'move':'wall'));
+if(wallEraserBtn) wallEraserBtn.addEventListener('click',()=>setTool(currentTool==='wall-eraser'?'move':'wall-eraser'));
+
+
+function applyTokenRotation(deg) {
+    if (!selectedToken) return;
+    selectedToken.rotation = ((deg % 360) + 360) % 360;
+    drawCanvas();
+    broadcast({ type: 'token_rotate', tokenId: selectedToken.id, rotation: selectedToken.rotation });
+    saveStateToStorage();
+}
 drawColorInput.addEventListener('input', e => { drawColor = e.target.value; });
 undoBtn.addEventListener('click', undo);
 redoBtn.addEventListener('click', redo);
@@ -3521,14 +4498,60 @@ D.addEventListener('click', () => saveDropdown.classList.remove('open'));
 
 function doSaveJson() {
     autoSaveCurrentNpc();
-    const data = { version:3, mapSettings, npcs, tokens:tokens.map(t=>({...t,imageObj:null})), drawings, initiativeOrder, currentTurnIndex };
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type:'application/json' });
+    // Serializar npcs mantendo tokenImageBase64 (imagens dos tokens)
+    const npcsToSave = {};
+    Object.keys(npcs).forEach(id => {
+        npcsToSave[id] = { ...npcs[id] };
+    });
+
+    // Serializar manualLights garantindo que todos os campos existem
+    const manualLightsToSave = (manualLights || []).map(ml => ({
+        id:        ml.id        || String(Date.now()),
+        label:     ml.label     || 'Luz',
+        x:         ml.x        ?? 0,
+        y:         ml.y        ?? 0,
+        color:     ml.color     || '#ffcc66',
+        radius:    ml.radius   ?? 3,
+        intensity: ml.intensity ?? 1.0,
+    }));
+
+    const data = {
+        version: 4,
+        // ── Mapa e grid ──────────────────────────────────────────
+        mapSettings,
+        // ── NPCs (com imagens de token embutidas) ────────────────
+        npcs: npcsToSave,
+        tokens: tokens.map(t => ({ ...t, imageObj: null })),
+        walls,
+        drawings,
+        // ── Iniciativa ───────────────────────────────────────────
+        initiativeOrder,
+        currentTurnIndex,
+        // ── Névoa de Guerra ──────────────────────────────────────
+        fowEnabled,
+        fowGmReveal,
+        fowExplored,
+        // ── Iluminação dinâmica ──────────────────────────────────
+        glEnabled,
+        glAmbientIntensity,
+        glAmbientColor,
+        manualLights: manualLightsToSave,
+    };
+
+    let jsonStr;
+    try {
+        jsonStr = JSON.stringify(data, null, 2);
+    } catch(err) {
+        console.error('Erro ao serializar JSON:', err);
+        showFeedback('❌ Erro ao gerar o arquivo.', 'error');
+        return;
+    }
+    const blob = new Blob([jsonStr], { type: 'application/json' });
     const a = D.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = `${mapSettings.name.replace(/\s+/g,'_')}.json`;
+    a.download = `${(mapSettings.name || 'mapa').replace(/\s+/g,'_')}.json`;
     a.click();
     setTimeout(() => URL.revokeObjectURL(a.href), 10000);
-    // Update last-saved UI
     lastSavedTime = new Date();
     saveLastSavedTime.textContent = lastSavedTime.toLocaleTimeString();
     saveLastSavedRow.style.display = 'block';
@@ -3570,10 +4593,10 @@ clearMapFromSaveBtn.addEventListener('click', () => {
     saveDropdown.classList.remove('open');
     showCustomConfirm('Limpar todo o mapa (tokens e desenhos)?', confirmed => {
         if (confirmed) {
-            saveToUndo(); tokens=[]; drawings=[]; selectedToken=null;
+            saveToUndo(); tokens=[]; walls=[]; drawings=[]; selectedToken=null;
             saveStateToStorage(); drawCanvas(); updateTokenControlsState();
+            broadcastFullState();
             showFeedback('Mapa limpo!','success');
-            broadcast({ type:'map_clear' });
         }
         hideCustomConfirm();
     });
@@ -3582,10 +4605,10 @@ clearMapFromSaveBtn.addEventListener('click', () => {
 clearCanvasBtn?.addEventListener('click', () => {
     showCustomConfirm('Limpar todo o mapa (tokens e desenhos)?', confirmed => {
         if (confirmed) {
-            saveToUndo(); tokens=[]; drawings=[]; selectedToken=null;
+            saveToUndo(); tokens=[]; walls=[]; drawings=[]; selectedToken=null;
             saveStateToStorage(); drawCanvas(); updateTokenControlsState();
+            broadcastFullState();
             showFeedback('Mapa limpo!','success');
-            broadcast({ type:'map_clear' });
         }
         hideCustomConfirm();
     });
@@ -3732,6 +4755,8 @@ mapSettingsBtn.addEventListener('click', () => {
     gridRowsInput.value              = mapSettings.gridRows;
     cellSizeInput.value              = mapSettings.cellSize || 40;
     gridColorInput.value             = mapSettings.gridColor || '#4b5563';
+    gridOpacityInput.value           = Math.round((mapSettings.gridOpacity != null ? mapSettings.gridOpacity : 1) * 100);
+    gridOpacityValueSpan.textContent = gridOpacityInput.value + '%';
     showGridLabelsInput.checked      = mapSettings.showGridLabels !== false;
     unitSystemInput.value            = mapSettings.unitSystem || 'squares';
     scalePerSquareInput.value        = mapSettings.scalePerSquare ?? 1.5;
@@ -3745,6 +4770,11 @@ mapSettingsBtn.addEventListener('click', () => {
         mapBackgroundPreviewContainer.classList.add('hidden');
     }
     mapSettingsModal.classList.remove('hidden');
+    setTimeout(() => {
+        const mc = mapSettingsModal.querySelector('.custom-modal-content');
+        if (mc) mc.scrollTop = 0;
+    }, 10);
+    updateResyncUI();
 });
 
 // Live update of cone angle label and scale preview
@@ -3753,6 +4783,18 @@ coneAngleInput.addEventListener('input', () => {
 });
 scalePerSquareInput.addEventListener('input', updateScalePreview);
 unitSystemInput.addEventListener('change', updateScalePreview);
+npcVisionRadiusInput.addEventListener('input', () => {
+    if (npcVisionRadiusLabel) npcVisionRadiusLabel.textContent = npcVisionRadiusInput.value;
+});
+npcVisionConeAngleInput.addEventListener('input', () => {
+    npcVisionConeAngleLabel.textContent = npcVisionConeAngleInput.value + '°';
+});
+gridOpacityInput.addEventListener('input', () => {
+    gridOpacityValueSpan.textContent = gridOpacityInput.value + '%';
+    mapSettings.gridOpacity = parseInt(gridOpacityInput.value, 10) / 100;
+    try { localStorage.setItem('gridOpacity', mapSettings.gridOpacity); } catch(e){}
+    drawCanvas();
+});
 
 saveMapSettingsBtn.addEventListener('click', () => {
     mapSettings.name            = mapNameInput.value || 'Mapa';
@@ -3760,6 +4802,7 @@ saveMapSettingsBtn.addEventListener('click', () => {
     mapSettings.gridRows        = Math.max(5,  Math.min(100, parseInt(gridRowsInput.value)||15));
     mapSettings.cellSize        = Math.max(20, Math.min(120, parseInt(cellSizeInput.value)||40));
     mapSettings.gridColor       = gridColorInput.value;
+    mapSettings.gridOpacity     = parseInt(gridOpacityInput.value, 10) / 100;
     mapSettings.showGridLabels  = showGridLabelsInput.checked;
     mapSettings.unitSystem      = unitSystemInput.value;
     mapSettings.scalePerSquare  = parseFloat(scalePerSquareInput.value) || 1.5;
@@ -3821,25 +4864,73 @@ async function loadMapFromFile(e) {
     reader.onload = async ev => {
         try {
             const data = JSON.parse(ev.target.result);
+
+            // ── Mapa e grid ──────────────────────────────────────
             mapSettings = {
-                gridColor:'#4b5563', showGridLabels:true, cellSize:40,
-                unitSystem:'squares', scalePerSquare:1.5, coneAngle:60,
-                unit:'quad.',
-                ...(data.mapSettings||{})
+                gridColor:'#4b5563', gridOpacity:1, showGridLabels:true, cellSize:40,
+                unitSystem:'meters', scalePerSquare:1.5, coneAngle:60,
+                unit:'m',
+                ...(data.mapSettings || {})
             };
             rulerConeAngle = mapSettings.coneAngle || 60;
-            npcs = data.npcs || {};
+
+            // ── NPCs e tokens ────────────────────────────────────
+            npcs     = data.npcs || {};
+            walls    = data.walls    || [];
             drawings = data.drawings || [];
-            initiativeOrder = data.initiativeOrder || [];
+            initiativeOrder  = data.initiativeOrder  || [];
             currentTurnIndex = data.currentTurnIndex || 0;
-            tokens = (data.tokens||[]).map(t=>({...t,imageObj:null,isDragging:false,widthInGrids:t.widthInGrids||1,heightInGrids:t.heightInGrids||1}));
-            saveStateToStorage();
+            tokens = (data.tokens || []).map(t => ({
+                ...t, imageObj:null, isDragging:false,
+                widthInGrids:  t.widthInGrids  || 1,
+                heightInGrids: t.heightInGrids || 1
+            }));
+
+            // ── Névoa de Guerra ──────────────────────────────────
+            if (data.fowEnabled !== undefined) {
+                fowEnabled  = !!data.fowEnabled;
+                fowGmReveal = data.fowGmReveal !== undefined ? !!data.fowGmReveal : true;
+                fowExplored = data.fowExplored || {};
+                saveFowExplored();
+            } else {
+                fowEnabled = false; fowGmReveal = true; fowExplored = {};
+            }
+
+            // ── Iluminação dinâmica ──────────────────────────────
+            if (data.glEnabled !== undefined) {
+                glEnabled          = !!data.glEnabled;
+                glAmbientIntensity = data.glAmbientIntensity ?? 0.08;
+                glAmbientColor     = data.glAmbientColor     ?? [0.04, 0.055, 0.1];
+                manualLights = (data.manualLights ?? []).map(ml => ({
+                    id:        ml.id        || String(Date.now() + Math.random()),
+                    label:     ml.label     || 'Luz',
+                    x:         ml.x        ?? 0,
+                    y:         ml.y        ?? 0,
+                    color:     ml.color     || '#ffcc66',
+                    radius:    ml.radius   ?? 3,
+                    intensity: ml.intensity ?? 1.0,
+                }));
+                if (glEnabled && !gl) initWebGL();
+                const lc = $('lightingCanvas');
+                if (lc) lc.style.display = glEnabled ? 'block' : 'none';
+            } else {
+                glEnabled = false; manualLights = [];
+                const lc = $('lightingCanvas');
+                if (lc) lc.style.display = 'none';
+            }
+
             saveDropdown.classList.remove('open');
             await showMapApplication(false);
-            showFeedback('Mapa carregado!','success');
+            // Se o Mestre estiver em sessão ativa, sincronizar o novo mapa com todos os jogadores
+            if (isHost && connections.filter(c => c && c.open).length > 0) {
+                broadcastFullState();
+                showFeedback('✅ Mapa carregado e sincronizado com os jogadores!', 'success');
+            } else {
+                showFeedback('✅ Mapa carregado!', 'success');
+            }
         } catch(err) {
             console.error(err);
-            showFeedback('Erro ao carregar o arquivo.','error');
+            showFeedback('Erro ao carregar o arquivo.', 'error');
         }
     };
     reader.readAsText(file);
@@ -3870,46 +4961,6 @@ let isHost      = false;
 let myRole      = null;   // 'host' | 'client' | null (single-player)
 let _suppressBroadcast = false;
 
-// ── Permission helpers ──────────────────────────────────────────────────────
-function isPlayer()        { return myRole === 'client'; }
-function canEditNpc(id)    { return !isPlayer() || !npcs[id]?.isEnemy; }
-function canMoveToken(tok) { return !isPlayer() || !npcs[tok.npcId]?.isEnemy; }
-
-/** Ativa/desativa restrições visuais de acordo com o papel (mestre/jogador). */
-function applyRoleUI() {
-    const player = isPlayer();
-    document.body.classList.toggle('player-mode', player);
-    const badge = $('playerModeBadge');
-    if (badge) badge.style.display = player ? 'block' : 'none';
-    if (player && typeof envPanelOpen !== 'undefined' && envPanelOpen) closeEnvPanel();
-    renderNpcList();
-    updateTokenControlsState();
-}
-
-/** Bloqueia/desbloqueia todos os campos do formulário NPC. */
-function _setNpcFormReadOnly(locked) {
-    const fields = ['npcName','npcType','npcHpMax','npcHpCurrent','npcInitiative',
-        'npcDescription','npcStats','tokenWidthInput','tokenHeightInput',
-        'npcVisionRadius','npcLightRadius','npcLightColor','npcLightIntensity'];
-    fields.forEach(id => { const el = $(id); if (el) el.disabled = locked; });
-    ['saveNpcBtn','addTokenBtn','addToInitiativeBtn','uploadTokenImageBtn',
-     'removeTokenImageBtn','toggleEnemyBtn'].forEach(id => {
-        const el = $(id); if (el) el.disabled = locked;
-    });
-    const existing = $('npcReadonlyNotice');
-    const formContent = $('npcFormContent');
-    if (locked && !existing && formContent) {
-        const notice = D.createElement('div');
-        notice.id = 'npcReadonlyNotice';
-        notice.className = 'player-readonly-notice';
-        notice.innerHTML = '🔒 <strong>Inimigo</strong> — somente o Mestre pode editar';
-        formContent.insertBefore(notice, formContent.firstChild);
-    } else if (!locked && existing) {
-        existing.remove();
-    }
-}
-// ───────────────────────────────────────────────────────────────────────────
-
 // Image chunk reassembly buffer: imageId → { npcId, chunks[], total, received }
 const imageAssemblyBuffer = {};
 
@@ -3924,9 +4975,10 @@ const hostIdDisplay     = $('hostIdDisplay');
 const copyHostIdBtn     = $('copyHostIdBtn');
 const joinIdInput       = $('joinIdInput');
 const lobbyStatusEl     = $('lobbyStatus');
-const peerCounterBadge  = $('peerCounterBadge');
-const peerCounterText   = $('peerCounterText');
-const peerRoleText      = $('peerRoleText');
+// peerCounterBadge substituído por onlinePanel
+const peerCounterBadge  = null;
+const peerCounterText   = null;
+const peerRoleText      = null;
 
 // ============================================================
 //   TRANSPORT
@@ -3962,6 +5014,22 @@ function connSend(conn, obj) {
 
 // Central message router.
 // PeerJS default serialization delivers already-parsed objects to .on('data').
+function applyLightIconsToggleUI() {
+    const btn = document.getElementById('toggleLightIconsBtn');
+    if (!btn) return;
+    if (lightTokensVisible) {
+        btn.style.background = 'rgba(251,191,36,0.12)';
+        btn.style.color = '#fde68a';
+        btn.style.opacity = '1';
+        btn.title = 'Ocultar ícones de luz no mapa';
+    } else {
+        btn.style.background = 'rgba(255,255,255,0.05)';
+        btn.style.color = 'rgba(156,163,175,0.6)';
+        btn.style.opacity = '0.6';
+        btn.title = 'Mostrar ícones de luz no mapa';
+    }
+}
+
 function handleRemoteMessage(raw, sourceConn) {
     // raw is already a parsed object from PeerJS json serialization,
     // but guard against the rare case it arrives as a string.
@@ -3979,12 +5047,13 @@ function handleRemoteMessage(raw, sourceConn) {
 
             case 'full_state_sync': {
                 const { backgroundImage:_bg, ...msClean } = msg.mapSettings || {};
-                mapSettings = { gridColor:'#4b5563', showGridLabels:true, cellSize:40, ...msClean };
+                mapSettings = { gridColor:'#4b5563', gridOpacity:1, showGridLabels:true, cellSize:40, unitSystem:'meters', ...msClean };
                 npcs = msg.npcs || {};
                 tokens = (msg.tokens || []).map(t => ({
                     ...t, imageObj:null, isDragging:false,
                     widthInGrids:t.widthInGrids||1, heightInGrids:t.heightInGrids||1
                 }));
+                walls            = msg.walls           || [];
                 drawings         = msg.drawings        || [];
                 initiativeOrder  = msg.initiativeOrder || [];
                 currentTurnIndex = msg.currentTurnIndex || 0;
@@ -4002,24 +5071,55 @@ function handleRemoteMessage(raw, sourceConn) {
                     glAmbientColor     = msg.glAmbientColor     ?? glAmbientColor;
                     manualLights       = msg.manualLights       ?? manualLights;
                     if (glEnabled && !gl) initWebGL();
-                    if (lightingCanvas) lightingCanvas.style.display = glEnabled ? 'block' : 'none';
+                    if (lightingCanvas) lightingCanvas.style.display = 'none'; // offscreen only — composited via ctx.drawImage
                 }
                 updateEnvUI();
                 mapNameDisplay.textContent = mapSettings.name;
+                if (msg.lightTokensVisible !== undefined) {
+                    lightTokensVisible = !!msg.lightTokensVisible;
+                    applyLightIconsToggleUI();
+                }
+                if (!isHost) startClientSyncTimer();
                 reloadTokenImages().then(() => {
-                    resizeCanvasAndDraw(); renderNpcList(); renderInitiative();
+                    resizeCanvasAndDraw(); renderNpcList(); renderInitiative(); renderTokenLightList();
+                    if (_pendingResyncStatus) {
+                        _pendingResyncStatus = false;
+                        const st = document.getElementById('resyncStatus');
+                        if (st) st.textContent = `✅ ${new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit',second:'2-digit'})}`;
+                        showFeedback('✅ Mapa sincronizado!', 'success');
+                    }
                 });
                 break;
             }
 
             case 'token_move': {
                 const t = tokens.find(tk => tk.id === msg.tokenId);
-                if (t) { t.x = msg.x; t.y = msg.y; drawCanvas(); }
+                if (t) {
+                    t.x = msg.x; t.y = msg.y; if (msg.rotation !== undefined) t.rotation = msg.rotation; drawCanvas();
+                }
+                break;
+            }
+            case 'token_rotate': {
+                const tr = tokens.find(tk => tk.id === msg.tokenId);
+                if (tr) {
+                    tr.rotation = msg.rotation; drawCanvas();
+                }
                 break;
             }
 
             case 'token_add': {
-                if (!npcs[msg.npc.id]) npcs[msg.npc.id] = { ...msg.npc, tokenImageBase64:'' };
+                // garante aparição imediata de aliados/NPCs já existentes no cliente
+                if (!npcs[msg.npc.id]) {
+                    npcs[msg.npc.id] = { ...msg.npc, tokenImageBase64:'' };
+                } else {
+                    // Atualizar campos de luz/visão mesmo que NPC já exista
+                    const _ex = npcs[msg.npc.id];
+                    _ex.lightRadius    = msg.npc.lightRadius    ?? _ex.lightRadius    ?? 0;
+                    _ex.lightColor     = msg.npc.lightColor     || _ex.lightColor     || '#ffaa44';
+                    _ex.lightIntensity = msg.npc.lightIntensity ?? _ex.lightIntensity ?? 1.0;
+                    _ex.visionRadius    = msg.npc.visionRadius    ?? _ex.visionRadius    ?? 6;
+                    _ex.visionConeAngle = msg.npc.visionConeAngle ?? _ex.visionConeAngle ?? 65;
+                }
                 if (!tokens.find(t => t.id === msg.token.id))
                     tokens.push({ ...msg.token, imageObj:null, isDragging:false });
                 saveStateToStorage(); renderNpcList(); drawCanvas();
@@ -4036,6 +5136,19 @@ function handleRemoteMessage(raw, sourceConn) {
             case 'drawing_add': {
                 drawings.push(msg.drawing);
                 saveStateToStorage(); drawCanvas();
+                break;
+            }
+            case 'wall_add': {
+                if(msg.wall&&!walls.find(w=>w.id===msg.wall.id)){walls.push(msg.wall);saveStateToStorage();drawCanvas();}
+                break;
+            }
+            case 'wall_remove': {
+                walls=walls.filter(w=>w.id!==msg.wallId);
+                saveStateToStorage();drawCanvas();
+                break;
+            }
+            case 'walls_sync': {
+                walls=msg.walls||[];saveStateToStorage();drawCanvas();
                 break;
             }
 
@@ -4055,6 +5168,7 @@ function handleRemoteMessage(raw, sourceConn) {
             }
 
             case 'npc_update': {
+                // garante atualização imediata da ficha, visibilidade e luz
                 if (npcs[msg.npcId]) {
                     Object.assign(npcs[msg.npcId], msg.patch);
                     saveStateToStorage(); renderNpcList(); drawCanvas();
@@ -4063,7 +5177,7 @@ function handleRemoteMessage(raw, sourceConn) {
             }
 
             case 'map_clear': {
-                tokens = []; drawings = []; selectedToken = null;
+                tokens = []; walls = []; drawings = []; selectedToken = null;
                 saveStateToStorage(); drawCanvas(); updateTokenControlsState();
                 showFeedback('Mestre limpou o mapa.', 'info');
                 break;
@@ -4120,6 +5234,12 @@ function handleRemoteMessage(raw, sourceConn) {
                 break;
             }
 
+            case 'light_icons_visible': {
+                lightTokensVisible = !!msg.visible;
+                applyLightIconsToggleUI();
+                drawCanvas();
+                break;
+            }
             case 'gl_state': {
                 glEnabled          = !!msg.glEnabled;
                 glAmbientIntensity = msg.glAmbientIntensity ?? glAmbientIntensity;
@@ -4174,6 +5294,57 @@ function handleRemoteMessage(raw, sourceConn) {
                 break;
             }
 
+            case 'ping': {
+                // Cliente responde imediatamente ao ping do host
+                if (!isHost && connections.length > 0) {
+                    try { connSend(connections[0], { type: 'pong', ts: msg.ts }); } catch(e) {}
+                }
+                break;
+            }
+            case 'pong': {
+                if (isHost && sourceConn) {
+                    sourceConn._lastPong = Date.now();
+                }
+                break;
+            }
+            case 'request_sync': {
+                if (isHost && sourceConn && sourceConn.open) {
+                    console.log('[P2P] Resync solicitado por', sourceConn.peer);
+                    sendFullStateSync(sourceConn);
+                }
+                break;
+            }
+            case 'nick_announce': {
+                if (isHost && sourceConn) {
+                    // Host recebeu nick de um jogador
+                    const info = { nick: msg.nick || 'Jogador', role: 'Jogador' };
+                    sourceConn._nickInfo = info;
+                    onlinePlayers.set(sourceConn.peer, info);
+                    updatePeerBadge();
+                    // Distribuir lista completa para TODOS (inclui o host)
+                    const allPlayers = [
+                        { id: '__host__', nick: getMyNick(), role: 'Mestre' },
+                        ...Array.from(onlinePlayers.entries()).map(([id, v]) => ({ id, nick: v.nick, role: v.role }))
+                    ];
+                    broadcast({ type: 'nick_list', players: allPlayers });
+                } else {
+                    // Jogador recebeu nick do Mestre
+                    const pid = msg.peerId || '__host__';
+                    onlinePlayers.set(pid, { nick: msg.nick || 'Mestre', role: 'Mestre' });
+                    updatePeerBadge();
+                }
+                break;
+            }
+            case 'nick_list': {
+                // Lista completa vinda do host — reconstruir (exceto a si mesmo)
+                onlinePlayers.clear();
+                (msg.players || []).forEach(pl => {
+                    if (pl.id === myPeerId()) return; // pular a si mesmo
+                    onlinePlayers.set(pl.id, { nick: pl.nick, role: pl.role });
+                });
+                updatePeerBadge();
+                break;
+            }
             default:
                 console.warn('[P2P] unknown type:', msg.type);
         }
@@ -4223,6 +5394,7 @@ function sendFullStateSync(conn) {
         type: 'full_state_sync',
         mapSettings:    msClean,
         npcs:           npcsClean,
+        walls:          walls,
         tokens:         tokens.map(t => ({...t, imageObj:null})),
         drawings,
         initiativeOrder,
@@ -4233,7 +5405,8 @@ function sendFullStateSync(conn) {
         glEnabled,
         glAmbientIntensity,
         glAmbientColor,
-        manualLights
+        manualLights,
+        lightTokensVisible
     });
 
     const sessionId = Date.now();
@@ -4346,21 +5519,39 @@ function initAsHost() {
 function setupHostConnection(conn) {
     conn.on('open', () => {
         connections.push(conn);
+        // Registrar com nick temporário até receber nick_announce
+        conn._nickInfo = { nick: 'Aguardando...', role: 'Jogador' };
+        conn._lastPong = Date.now(); // inicializar para não dar timeout imediato
+        onlinePlayers.set(conn.peer, conn._nickInfo);
         updatePeerBadge();
         showFeedback(`🟢 Jogador conectado! (${connections.filter(c=>c.open).length} online)`, 'success');
         if (!lobbyScreen.classList.contains('hidden')) {
             setLobbyStatus(`✅ ${connections.filter(c=>c.open).length} jogador(es) conectado(s).`, 'connected');
         }
         sendFullStateSync(conn);
+        // Enviar nick do mestre + lista completa de todos já conectados
+        saveMyNick();
+        connSend(conn, { type: 'nick_announce', nick: getMyNick(), role: 'Mestre', peerId: '__host__' });
+        // Enviar lista completa de online (inclui jogadores já presentes)
+        const currentList = [
+            { id: '__host__', nick: getMyNick(), role: 'Mestre' },
+            ...Array.from(onlinePlayers.entries()).map(([id, v]) => ({ id, nick: v.nick, role: v.role }))
+        ];
+        connSend(conn, { type: 'nick_list', players: currentList });
     });
     conn.on('data',  raw => handleRemoteMessage(raw, conn));
     conn.on('close', ()  => {
+        const nick = conn._nickInfo?.nick || 'Jogador';
+        onlinePlayers.delete(conn.peer);
         connections = connections.filter(c => c !== conn);
         updatePeerBadge();
-        showFeedback('🔴 Um jogador desconectou.', 'info');
+        showFeedback(`🔴 ${nick} desconectou.`, 'info');
+        // Avisar outros jogadores que alguém saiu
+        broadcast({ type: 'nick_list', players: Array.from(onlinePlayers.entries()).map(([id,v])=>({id,...v})) });
     });
     conn.on('error', err => {
         console.error('[PeerJS Host] conn error', err);
+        onlinePlayers.delete(conn.peer);
         connections = connections.filter(c => c !== conn);
         updatePeerBadge();
     });
@@ -4424,8 +5615,12 @@ function initAsClient(hostId) {
 function setupClientConnection(conn) {
     conn.on('open', () => {
         connections = [conn];
+        _clientHostPeerId = conn.peer;
+        _reconnectAttempts = 0;
         updatePeerBadge();
         setLobbyStatus('✅ Conectado! Aguardando dados do mapa…', 'connected');
+        saveMyNick();
+        connSend(conn, { type: 'nick_announce', nick: getMyNick(), role: 'Jogador', peerId: myPeerId() });
     });
 
     conn.on('data', raw => {
@@ -4452,15 +5647,51 @@ function setupClientConnection(conn) {
     conn.on('close', () => {
         connections = [];
         updatePeerBadge();
-        showFeedback('🔴 Conexão com o Mestre perdida.', 'error');
+        showFeedback('🔴 Conexão perdida. Reconectando…', 'error');
+        scheduleClientReconnect(conn.peer);
     });
 
     conn.on('error', err => {
         console.error('[PeerJS Client] conn error', err);
         connections = [];
         updatePeerBadge();
-        showFeedback('❌ Erro na conexão P2P.', 'error');
+        showFeedback('❌ Erro P2P. Reconectando…', 'error');
+        scheduleClientReconnect(conn.peer);
     });
+}
+
+let _reconnectTimer = null;
+function scheduleClientReconnect(hostPeerId) {
+    if (isHost || !hostPeerId) return;
+    if (_reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
+        showFeedback('❌ Não foi possível reconectar.', 'error');
+        _reconnectAttempts = 0;
+        return;
+    }
+    const delay = Math.min(2000 * Math.pow(1.5, _reconnectAttempts), 30000);
+    _reconnectAttempts++;
+    clearTimeout(_reconnectTimer);
+    _reconnectTimer = setTimeout(() => {
+        if (connections.length > 0 && connections[0].open) { _reconnectAttempts = 0; return; }
+        showFeedback(`🔄 Reconectando… (${_reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS})`, 'info');
+        try {
+            const nc = peer.connect(hostPeerId, { reliable: true, serialization: 'json' });
+            const t = setTimeout(() => { if (!nc.open) { nc.close(); scheduleClientReconnect(hostPeerId); } }, 8000);
+            nc.on('open', () => {
+                clearTimeout(t);
+                _reconnectAttempts = 0;
+                connections = [nc];
+                _clientHostPeerId = hostPeerId;
+                updatePeerBadge();
+                showFeedback('🟢 Reconectado! Sincronizando…', 'success');
+                connSend(nc, { type: 'nick_announce', nick: getMyNick(), role: 'Jogador', peerId: myPeerId() });
+                setTimeout(() => connSend(nc, { type: 'request_sync' }), 800);
+            });
+            nc.on('data', raw => handleRemoteMessage(raw, nc));
+            nc.on('close', () => { connections = []; updatePeerBadge(); scheduleClientReconnect(hostPeerId); });
+            nc.on('error', () => { scheduleClientReconnect(hostPeerId); });
+        } catch(e) { scheduleClientReconnect(hostPeerId); }
+    }, delay);
 }
 
 // ============================================================
@@ -4511,12 +5742,158 @@ function _showRetry(role) {
     lobbyStatusEl.after(btn);
 }
 
+
+
+// ============================================================
+//   HEARTBEAT — detecta jogadores que fecharam o navegador
+// ============================================================
+const PING_INTERVAL   = 5000;  // enviar ping a cada 5s
+const PING_TIMEOUT    = 12000; // remover se não pingar em 12s
+let heartbeatTimer = null;
+let _clientHostPeerId = null;
+let _reconnectAttempts = 0;
+const MAX_RECONNECT_ATTEMPTS = 8;
+
+function startHeartbeat() {
+    if (heartbeatTimer) clearInterval(heartbeatTimer);
+    heartbeatTimer = setInterval(() => {
+        if (!isHost) return;
+        const now = Date.now();
+        connections.forEach(conn => {
+            if (!conn || !conn.open) return;
+            // Checar timeout do último pong
+            if (conn._lastPong && (now - conn._lastPong) > PING_TIMEOUT) {
+                console.log('[Heartbeat] Timeout:', conn.peer);
+                const nick = conn._nickInfo?.nick || 'Jogador';
+                onlinePlayers.delete(conn.peer);
+                connections = connections.filter(c => c !== conn);
+                try { conn.close(); } catch(e) {}
+                updatePeerBadge();
+                showFeedback(`🔴 ${nick} saiu (timeout).`, 'info');
+                const updatedList = [
+                    { id: '__host__', nick: getMyNick(), role: 'Mestre' },
+                    ...Array.from(onlinePlayers.entries()).map(([id, v]) => ({ id, nick: v.nick, role: v.role }))
+                ];
+                broadcast({ type: 'nick_list', players: updatedList });
+                return;
+            }
+            // Enviar ping
+            try { connSend(conn, { type: 'ping', ts: now }); } catch(e) {}
+        });
+    }, PING_INTERVAL);
+}
+
+function stopHeartbeat() {
+    if (heartbeatTimer) { clearInterval(heartbeatTimer); heartbeatTimer = null; }
+}
+
+// Periodic silent resync for clients (every 45s) — helps mobile after background sleep
+let _clientSyncTimer = null;
+function startClientSyncTimer() {
+    if (_clientSyncTimer) clearInterval(_clientSyncTimer);
+    _clientSyncTimer = setInterval(() => {
+        if (isHost || myRole === null) return;
+        if (!connections.length || !connections[0].open) return;
+        connSend(connections[0], { type: 'request_sync' });
+    }, 45000);
+}
+function stopClientSyncTimer() {
+    if (_clientSyncTimer) { clearInterval(_clientSyncTimer); _clientSyncTimer = null; }
+}
+
+
+// ============================================================
+//   BROADCAST FULL STATE — sincroniza o mapa completo com
+//   todos os jogadores conectados (host → clients).
+// ============================================================
+function broadcastFullState() {
+    if (!isHost) return;
+    const active = connections.filter(c => c && c.open);
+    if (!active.length) return;
+    active.forEach(conn => sendFullStateSync(conn));
+    console.log('[P2P] Full state broadcast para', active.length, 'jogador(es)');
+}
+
+
+// ============================================================
+//   SISTEMA DE NICKS
+// ============================================================
+let myNick = localStorage.getItem('myNick') || '';
+// Map: connId → { nick, role }
+const onlinePlayers = new Map();
+let onlineDropdownOpen = false;
+
+function getMyNick() {
+    const input = $('myNickInput');
+    if (input && input.value.trim()) return input.value.trim();
+    return myNick || (isHost ? 'Mestre' : 'Jogador');
+}
+
+function saveMyNick() {
+    const input = $('myNickInput');
+    if (input) {
+        myNick = input.value.trim() || (isHost ? 'Mestre' : 'Jogador');
+        localStorage.setItem('myNick', myNick);
+    }
+}
+
+function updateOnlinePanel() {
+    const panel = $('onlinePanel');
+    const panelText = $('onlinePanelText');
+    const dropdown = $('onlineListDropdown');
+    if (!panel) return;
+
+    if (myRole === null) { panel.classList.remove('visible'); return; }
+    panel.classList.add('visible');
+
+    const total = onlinePlayers.size + 1; // +1 = eu mesmo
+    panelText.textContent = `${total} online`;
+
+    // Renderizar dropdown
+    let html = '';
+    // Eu mesmo
+    const myDisplayNick = getMyNick();
+    const myRole_ = isHost ? 'Mestre' : 'Jogador';
+    html += `<div class="online-item is-me">
+        <span class="online-dot" style="background:var(--accent);"></span>
+        <span>${myDisplayNick}</span>
+        <span class="online-role">${myRole_} (você)</span>
+    </div>`;
+    // Outros
+    onlinePlayers.forEach((info, id) => {
+        html += `<div class="online-item">
+            <span class="online-dot"></span>
+            <span>${info.nick || 'Anônimo'}</span>
+            <span class="online-role">${info.role || 'Jogador'}</span>
+        </div>`;
+    });
+    if (dropdown) dropdown.innerHTML = html;
+}
+
+function toggleOnlineDropdown() {
+    const d = $('onlineListDropdown');
+    if (!d) return;
+    onlineDropdownOpen = !onlineDropdownOpen;
+    d.classList.toggle('open', onlineDropdownOpen);
+}
+
+// Fechar dropdown ao clicar fora
+document.addEventListener('click', e => {
+    const panel = $('onlinePanel');
+    const drop = $('onlineListDropdown');
+    if (!panel || !drop) return;
+    if (!panel.contains(e.target) && !drop.contains(e.target)) {
+        onlineDropdownOpen = false;
+        drop.classList.remove('open');
+    }
+}, true);
+
 function updatePeerBadge() {
-    if (myRole === null) { peerCounterBadge.classList.remove('visible'); return; }
-    peerCounterBadge.classList.add('visible');
-    const n = connections.filter(c => c && c.open).length + 1;
-    peerCounterText.textContent = `${n} jogador${n !== 1 ? 'es' : ''}`;
-    peerRoleText.textContent    = isHost ? 'Mestre' : 'Jogador';
+    updateOnlinePanel();
+    applyRoleUI();
+    // Atualizar select de owner se um NPC estiver aberto
+    if (currentNpcId && npcs[currentNpcId]) {
+    }
 }
 
 function destroyPeer() {
@@ -4525,6 +5902,30 @@ function destroyPeer() {
     if (peer && !peer.destroyed) { try { peer.destroy(); } catch(e) {} }
     peer = null;
 }
+// ============================================================
+//   ROLE-BASED UI — esconde controles exclusivos do Mestre
+//   quando o usuário conectado é um Jogador (cliente P2P).
+//   NÃO interfere em nenhuma lógica de transporte/P2P.
+// ============================================================
+function applyRoleUI() {
+    // true = mestre (host) ou single-player (myRole===null)
+    const gm = isHost || myRole === null;
+
+    // Abas de Névoa e Iluminação — ocultar painel inteiro se não for Mestre
+    const envBtn = $('envPanelBtn');
+    if (envBtn) envBtn.style.display = gm ? '' : 'none';
+
+    // Se o painel estiver aberto e não for GM, fechar e ocultar
+    if (!gm) {
+        closeEnvPanel && closeEnvPanel();
+    }
+
+    if(wallBtn)       wallBtn.style.display      = gm ? '' : 'none';
+    if(wallEraserBtn) wallEraserBtn.style.display = gm ? '' : 'none';
+    renderNpcList();
+}
+
+
 
 function copyFallback(text) {
     const ta = D.createElement('textarea');
@@ -4543,9 +5944,9 @@ lobbyHostBtn.addEventListener('click', () => initAsHost());
 
 lobbyHostEnterBtn.addEventListener('click', () => {
     hideLobbyScreen();
-    const hasSaved = localStorage.getItem('mapSettings') || localStorage.getItem('npcs');
-    showMapApplication(!hasSaved);
+    showMapApplication(true);
     updatePeerBadge();
+    startHeartbeat();
 });
 
 lobbyJoinBtn.addEventListener('click', () => {
@@ -4567,8 +5968,10 @@ copyHostIdBtn.addEventListener('click', () => {
 });
 
 lobbyBackBtn.addEventListener('click', () => {
+    stopHeartbeat();
     destroyPeer();
     myRole = null; isHost = false;
+    onlinePlayers.clear();
     hideLobbyScreen(); showMainScreen(); updatePeerBadge();
 });
 
@@ -4585,12 +5988,31 @@ window.addEventListener('resize', () => {
 document.addEventListener('DOMContentLoaded', () => {
     // ── Multiplayer button ────────────────────────────────────────
     const multiplayerBtn = $('multiplayerBtn');
+    // Online panel dropdown toggle
+    const _onlinePanel = $('onlinePanel');
+    if (_onlinePanel) _onlinePanel.addEventListener('click', toggleOnlineDropdown);
+
+    // Restaurar nick salvo no input do lobby
+    const _nickInput = $('myNickInput');
+    if (_nickInput) {
+        _nickInput.value = localStorage.getItem('myNick') || '';
+        _nickInput.addEventListener('input', () => {
+            myNick = _nickInput.value.trim();
+            localStorage.setItem('myNick', myNick);
+        });
+    }
+
     if (multiplayerBtn) {
         multiplayerBtn.addEventListener('click', () => {
             mainScreen.classList.add('hidden');
             showLobbyScreen();
         });
     }
+
+    if (toolsDrawerBtn) toolsDrawerBtn.addEventListener('click', () => {
+        toolsDrawerOpen = !toolsDrawerOpen;
+        updateToolsDrawerUI();
+    });
 
     // ── ENV PANEL open / close / tabs ────────────────────────────
     $('envPanelBtn').addEventListener('click', () => {
@@ -4671,10 +6093,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     $('addManualLightBtn').addEventListener('click', addManualLight);
 
+    $('toggleLightIconsBtn')?.addEventListener('click', () => {
+        lightTokensVisible = !lightTokensVisible;
+        applyLightIconsToggleUI();
+        drawCanvas();
+        broadcast({ type: 'light_icons_visible', visible: lightTokensVisible });
+    });
+
     // ── Boot ──────────────────────────────────────────────────────
-    const hasSaved = localStorage.getItem('mapSettings') || localStorage.getItem('npcs');
-    if (hasSaved) showMapApplication(false);
-    else showMainScreen();
+    // Sempre inicia na tela principal — carregamento automático desativado.
+    showMainScreen();
+    closeToolsDrawer();
     setTool('move');
 });
 

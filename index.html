@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Escudo do Mestre - FORJA RPG</title>
-    <!-- Tailwind CDN removed: only 7 utility classes used, inlined below --><style>
+    <!-- Tailwind CDN removed: only 7 utility classes used, inlined below -->
+<style>
       .hidden{display:none!important}
       .w-full{width:100%}
       .text-sm{font-size:.875rem;line-height:1.25rem}
@@ -646,7 +647,7 @@
             width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
             box-shadow: 0 0 6px currentColor;
         }
-        .light-item-name { flex: 1; font-size: 0.775rem; font-weight: 600; color: var(--text-primary); }
+        .light-item-name { flex: 1; font-size: 0.775rem; font-weight: 600; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
         .light-item-sub { font-size: 0.68rem; color: var(--text-muted); }
 
         /* FOW status badges */
@@ -1153,6 +1154,65 @@
             color: white;
             border-color: var(--danger);
         }
+
+/* ── SIDEBAR TABS ─────────────────────────────── */
+.sidebar-tab-nav {
+    display: flex;
+    gap: 0.25rem;
+    padding: 0.5rem 0.875rem 0;
+    flex-shrink: 0;
+    background: rgba(0,0,0,0.15);
+}
+.sidebar-tab-btn {
+    flex: 1;
+    padding: 0.3rem 0.3rem;
+    border-radius: 0.45rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    color: rgba(156,163,175,0.6);
+    transition: background 0.15s, color 0.15s;
+    white-space: nowrap;
+    letter-spacing: 0.02em;
+}
+.sidebar-tab-btn:hover:not(.active) { background: rgba(255,255,255,0.06); color: #c4b5fd; }
+.sidebar-tab-btn.active {
+    background: linear-gradient(135deg,rgba(109,40,217,0.65),rgba(37,99,235,0.55));
+    color: #e9d5ff;
+    box-shadow: 0 1px 6px rgba(109,40,217,0.3);
+}
+.sidebar-tab-btn.tab-fog.active  { background: linear-gradient(135deg,rgba(109,40,217,0.65),rgba(37,99,235,0.55)); color:#e9d5ff; }
+.sidebar-tab-btn.tab-light.active{ background: linear-gradient(135deg,rgba(120,53,15,0.7),rgba(92,64,14,0.8)); color:#fde68a; box-shadow:0 1px 6px rgba(251,191,36,0.25); }
+.sidebar-env-panel { flex: 1; overflow-y: auto; overflow-x: hidden; padding: 0.75rem 0.875rem; scrollbar-width: thin; scrollbar-color: rgba(139,92,246,0.3) transparent; display: flex; flex-direction: column; gap: 0.6rem; min-height: 0; }
+.sidebar-env-panel::-webkit-scrollbar { width: 3px; }
+.sidebar-env-panel::-webkit-scrollbar-thumb { background: rgba(139,92,246,0.3); border-radius: 2px; }
+
+.sidebar-tab-btn.tab-walls.active { background: linear-gradient(135deg,rgba(239,68,68,0.5),rgba(185,28,28,0.5)); color:#fca5a5; box-shadow:0 1px 6px rgba(239,68,68,0.25); }
+
+/* ── RULER DROPDOWN ───────────────────────────────── */
+.ruler-dropdown-wrap { position: relative; display: inline-flex; }
+.ruler-dropdown {
+    position: absolute;
+    bottom: calc(100% + 4px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(8,12,22,0.97);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 0.6rem;
+    padding: 0.3rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    z-index: 50;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.5);
+    backdrop-filter: blur(10px);
+    min-width: 2.8rem;
+    align-items: center;
+}
+.ruler-dropdown.hidden { display: none; }
+.ruler-opt { width: 2.25rem !important; height: 2.25rem !important; font-size: 1rem; }
 </style>
 </head>
 <body>
@@ -1247,7 +1307,13 @@
     <!-- LEFT SIDEBAR -->
     <aside id="npcSidebar" class="sidebar">
         <div class="sidebar-header">
-            <span class="title-font text-sm font-bold text-white" style="margin:0 auto;letter-spacing:0.05em;opacity:0.9;">NPCs</span>
+            <span id="sidebarPanelTitle" class="title-font text-sm font-bold text-white" style="margin:0 auto;letter-spacing:0.05em;opacity:0.9;">NPCs</span>
+        </div>
+        <div class="sidebar-tab-nav" id="sidebarTabNav">
+            <button class="sidebar-tab-btn tab-npc active" data-tab="npc"   title="Lista de NPCs">⚔️ NPCs</button>
+            <button class="sidebar-tab-btn tab-fog"   data-tab="fog"   id="sidebarFogTab"   title="Névoa de Guerra (F)">🌫️ Névoa</button>
+            <button class="sidebar-tab-btn tab-light" data-tab="light" id="sidebarLightTab" title="Iluminação Dinâmica">💡 Luz</button>
+            <button class="sidebar-tab-btn tab-walls" data-tab="walls" id="sidebarWallsTab" title="Ferramentas de Parede (só GM)" style="display:none;">🧱 Muros</button>
         </div>
         <div class="scroll-fade-wrap" id="npcScrollWrap">
             <div class="sidebar-body" id="npcScrollBody">
@@ -1256,6 +1322,124 @@
             </div>
         </div>
 
+
+        <!-- Fog sidebar panel -->
+        <div class="sidebar-env-panel hidden" id="sidebarFogPanel" data-sidebar-tab="fog">
+<div class="env-tab-content" data-content="fog">
+                    <!-- Status + Toggle -->
+                    <div class="env-card">
+                        <div class="env-card-title">Estado da Névoa</div>
+                        <div class="env-row" style="justify-content:space-between;">
+                            <span id="fowStatusPill" class="fow-status-pill off"><span class="pill-dot"></span>DESATIVADA</span>
+                            <div style="display:flex;gap:0.4rem;flex-wrap:wrap;">
+                                <button id="fowToggleBtn" class="btn btn-sm" style="background:linear-gradient(135deg,#5b21b6,#1d4ed8);border:1px solid rgba(167,139,250,0.3);color:#e9d5ff;">👁️ Ligar Névoa</button>
+                                <button id="fowGmRevealBtn" class="btn btn-sm" style="background:rgba(245,158,11,0.2);border:1px solid rgba(245,158,11,0.35);color:#fbbf24;display:none;">👓 Modo GM</button>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Vision radius -->
+                    <div class="env-card" id="fowRadiusCard" style="display:none;">
+                        <div class="env-card-title">Raio de Visão Global</div>
+                        <div class="env-row">
+                            <span class="env-label">👁 Raio padrão</span>
+                            <input type="range" id="fowVisionSlider" class="env-slider" min="1" max="20" value="6">
+                            <span class="env-val" id="fowVisionLabel">6</span>
+                            <span style="font-size:0.68rem;color:var(--text-muted);">quad.</span>
+                        </div>
+                        <p style="font-size:0.68rem;color:var(--text-muted);margin-top:0.35rem;">O raio individual de cada NPC prevalece sobre este valor.</p>
+                    </div>
+                    <!-- Actions -->
+                    <div class="env-card" id="fowActionsCard" style="display:none;">
+                        <div class="env-card-title">Ações</div>
+                        <div class="env-row" style="gap:0.4rem;">
+                            <button id="fowClearBtn" class="btn btn-ghost btn-sm" style="flex:1;justify-content:center;">🌫 Resetar Exploração</button>
+                        </div>
+                    </div>
+                </div>
+        </div>
+
+        <!-- Light sidebar panel -->
+        <div class="sidebar-env-panel hidden" id="sidebarLightPanel" data-sidebar-tab="light">
+<div class="env-tab-content" data-content="light">
+                    <!-- Toggle + Status -->
+                    <div class="env-card">
+                        <div class="env-card-title">Iluminação Dinâmica</div>
+                        <div class="env-row" style="justify-content:space-between;">
+                            <span id="lightStatusPill" class="fow-status-pill off"><span class="pill-dot"></span>DESATIVADA</span>
+                            <button id="glToggleBtn" class="btn btn-sm" style="background:linear-gradient(135deg,#78350f,#92400e);border:1px solid rgba(251,191,36,0.35);color:#fde68a;">💡 Ligar Luzes</button>
+                        </div>
+                    </div>
+                    <!-- Ambiente -->
+                    <div class="env-card" id="glAmbientCard" style="display:none;">
+                        <div class="env-card-title">Luz Ambiente</div>
+                        <div class="env-row" style="margin-bottom:0.4rem;">
+                            <span class="env-label">Intensidade</span>
+                            <input type="range" id="glAmbientIntensity" class="env-slider" min="0" max="100" value="8">
+                            <span class="env-val" id="glAmbientLabel">8%</span>
+                        </div>
+                        <div class="env-row">
+                            <span class="env-label">Cor ambiente</span>
+                            <input type="color" id="glAmbientColor" value="#0a0e1a"
+                                style="width:2.25rem;height:1.75rem;border-radius:0.375rem;border:1px solid var(--border-light);cursor:pointer;">
+                            <div style="display:flex;gap:0.3rem;flex-wrap:wrap;">
+                                <button class="btn btn-ghost btn-sm" style="font-size:0.65rem;" onclick="setPresetAmbient('night')">🌙 Noite</button>
+                                <button class="btn btn-ghost btn-sm" style="font-size:0.65rem;" onclick="setPresetAmbient('dusk')">🌆 Crepúsculo</button>
+                                <button class="btn btn-ghost btn-sm" style="font-size:0.65rem;" onclick="setPresetAmbient('dungeon')">🕯 Masmorra</button>
+                                <button class="btn btn-ghost btn-sm" style="font-size:0.65rem;" onclick="setPresetAmbient('day')">☀️ Dia</button>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Luzes de tokens (info) -->
+                    <div class="env-card" id="glTokenLightsCard" style="display:none;">
+                        <div class="env-card-title" style="display:flex;align-items:center;justify-content:space-between;">
+                            <span>Luzes dos Tokens</span>
+                            <span id="glTokenLightCount" style="font-size:0.7rem;color:#fbbf24;font-weight:700;">0 ativas</span>
+                        </div>
+                        <div id="glTokenLightList" style="max-height:100px;overflow-y:auto;">
+                            <p style="font-size:0.72rem;color:var(--text-muted);">Configure o raio de luz em cada NPC.</p>
+                        </div>
+                    </div>
+                    <!-- Fontes de luz manuais -->
+                    <div class="env-card" id="glManualLightsCard" style="display:none;">
+                        <div class="env-card-title">Fontes Manuais</div>
+                        <div style="display:flex;gap:0.3rem;align-items:center;flex-wrap:wrap;margin-bottom:0.4rem;">
+                                <button id="toggleLightIconsBtn" class="btn btn-sm" style="font-size:0.68rem;padding:0.15rem 0.4rem;background:rgba(251,191,36,0.12);border:1px solid rgba(251,191,36,0.25);color:#fde68a;" title="Mostrar/ocultar ícones de luz no mapa">👁️ Ícones</button>
+                                <button id="addManualLightBtn" class="btn btn-sm" style="font-size:0.68rem;padding:0.15rem 0.5rem;background:rgba(251,191,36,0.2);border:1px solid rgba(251,191,36,0.3);color:#fde68a;">+ Adicionar</button>
+                                <button onclick="addLightGroup()" class="btn btn-sm" style="font-size:0.68rem;padding:0.15rem 0.5rem;background:rgba(99,102,241,0.2);border:1px solid rgba(99,102,241,0.35);color:#c7d2fe;">+ Grupo</button>
+                            </div
+                        </div>
+                        <div style="display:flex;gap:0.3rem;margin-bottom:0.3rem;">
+                            <button onclick="setAllLightsEnabled(true)" class="btn btn-sm" style="flex:1;font-size:0.67rem;padding:0.15rem 0.3rem;background:rgba(251,191,36,0.15);border:1px solid rgba(251,191,36,0.3);color:#fde68a;">&#128161; Ligar tudo</button>
+                            <button onclick="setAllLightsEnabled(false)" class="btn btn-sm" style="flex:1;font-size:0.67rem;padding:0.15rem 0.3rem;background:rgba(30,30,30,0.4);border:1px solid rgba(255,255,255,0.1);color:var(--text-muted);">&#9711; Desligar tudo</button>
+                        </div>
+                        </div>
+                        <div id="manualLightList"></div>
+                        <p style="font-size:0.68rem;color:var(--text-muted);margin-top:0.35rem;">💡 Clique em uma célula com a ferramenta ativa para posicionar.</p>
+                    </div>
+        </div>
+        <!-- Walls sidebar panel -->
+        <div class="sidebar-env-panel hidden" id="sidebarWallsPanel" data-sidebar-tab="walls">
+            <div class="env-card">
+                <div class="env-card-title">Ferramentas de Parede</div>
+                <p style="font-size:0.72rem;color:var(--text-muted);margin-bottom:0.6rem;line-height:1.4;">
+                    Clique e arraste nas células do mapa para desenhar ou apagar paredes. As paredes bloqueiam visão e luz.
+                </p>
+                <div style="display:flex;flex-direction:column;gap:0.5rem;">
+                    <button id="wallBtn" class="btn" style="justify-content:center;background:linear-gradient(135deg,rgba(239,68,68,0.25),rgba(185,28,28,0.3));border:1px solid rgba(239,68,68,0.4);color:#fca5a5;font-size:0.85rem;">
+                        🧱 Desenhar Parede <span style="font-size:0.65rem;opacity:0.6;">[W]</span>
+                    </button>
+                    <button id="wallEraserBtn" class="btn btn-ghost" style="justify-content:center;font-size:0.85rem;">
+                        🧱✕ Apagar Parede
+                    </button>
+                </div>
+            </div>
+            <div class="env-card">
+                <div class="env-card-title">Dica</div>
+                <p style="font-size:0.72rem;color:var(--text-muted);line-height:1.4;">
+                    Ative a <strong style="color:#e9d5ff;">Névoa de Guerra</strong> ou a <strong style="color:#fde68a;">Iluminação</strong> para que as paredes bloqueiem visão e luz dos tokens.
+                </p>
+            </div>
+        </div>
         <!-- Initiative Tracker -->
         <div style="border-top:1px solid rgba(255,255,255,0.05);padding:0.75rem;flex-shrink:0;background:rgba(0,0,0,0.15);">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem;">
@@ -1339,17 +1523,27 @@
                 <!-- Tools -->
                 <button id="moveToolBtn" class="btn btn-icon active-tool" data-tip="Mover NPCs (M)">✥</button>
                 <button id="panToolBtn" class="btn btn-icon" data-tip="Mover Câmera (P)">🖐️</button>
-                <button id="rulerBtn" class="btn btn-icon" data-tip="Régua Linha (R)">📏</button>
-                <button id="coneBtn" class="btn btn-icon" data-tip="Régua Cone (C)">🔺</button>
-                <button id="drawLineBtn" class="btn btn-icon" data-tip="Desenhar (D)">✏️</button>
-                <button id="eraserBtn" class="btn btn-icon" data-tip="Borracha (E)">🧹</button>
-                <button id="wallBtn" class="btn btn-icon" data-tip="Parede (W) · só GM" style="display:none;font-size:0.72rem;">🧱</button>
-                <button id="wallEraserBtn" class="btn btn-icon" data-tip="Apagar Parede · só GM" style="display:none;font-size:0.65rem;letter-spacing:-0.02em;">🧱✕</button>
-
-
-                <input type="color" id="drawColorInput" value="#ef4444"
-                    style="width:1.75rem;height:1.75rem;border-radius:50%;border:2px solid rgba(255,255,255,0.4);cursor:pointer;padding:0;background:none;flex-shrink:0;"
-                    data-tip="Cor do Desenho">
+                <div class="ruler-dropdown-wrap" id="rulerDropdownWrap">
+                    <button id="rulerToggleBtn" class="btn btn-icon" data-tip="Régua (R/C)" style="position:relative;">📏<span id="rulerSubIcon" style="position:absolute;bottom:1px;right:1px;font-size:0.45rem;opacity:0.7;line-height:1;">▼</span></button>
+                    <div id="rulerDropdown" class="ruler-dropdown hidden">
+                        <button id="rulerBtn" class="btn btn-icon ruler-opt" data-tip="Régua Linha (R)" title="Régua Linha">📏</button>
+                        <button id="coneBtn"  class="btn btn-icon ruler-opt" data-tip="Régua Cone (C)"  title="Régua Cone">🔺</button>
+                    </div>
+                </div>
+                <div class="ruler-dropdown-wrap" id="drawDropdownWrap">
+                    <button id="drawToggleBtn" class="btn btn-icon" data-tip="Desenho & Limpeza" style="position:relative;">✏️<span style="position:absolute;bottom:1px;right:1px;font-size:0.45rem;opacity:0.7;line-height:1;">▼</span></button>
+                    <div id="drawDropdown" class="ruler-dropdown hidden">
+                        <button id="drawLineBtn" class="btn btn-icon ruler-opt" data-tip="Desenhar (D)" title="Desenhar">✏️</button>
+                        <button id="eraserBtn"   class="btn btn-icon ruler-opt" data-tip="Borracha (E)"  title="Borracha">🧹</button>
+                        <div style="width:100%;height:1px;background:rgba(255,255,255,0.08);margin:0.1rem 0;"></div>
+                        <input type="color" id="drawColorInput" value="#ef4444"
+                            style="width:1.75rem;height:1.75rem;border-radius:50%;border:2px solid rgba(255,255,255,0.4);cursor:pointer;padding:0;background:none;flex-shrink:0;"
+                            title="Cor do Desenho">
+                        <div style="width:100%;height:1px;background:rgba(255,255,255,0.08);margin:0.1rem 0;"></div>
+                        <button id="clearDrawingsBtn" class="btn btn-icon ruler-opt btn-ghost" data-tip="Limpar Desenhos" title="Limpar Desenhos" style="font-size:0.8rem;">✂</button>
+                        <button id="clearCanvasBtn" class="btn ruler-opt btn-danger btn-sm" data-tip="Limpar Mapa" title="Limpar Tudo" style="font-size:0.7rem;width:auto;padding:0.2rem 0.4rem;">🗑</button>
+                    </div>
+                </div>
 
                 <div class="controls-divider"></div>
 
@@ -1367,120 +1561,16 @@
                 <button id="undoBtn" class="btn btn-ghost btn-icon" data-tip="Desfazer (Ctrl+Z)">↩</button>
                 <button id="redoBtn" class="btn btn-ghost btn-icon" data-tip="Refazer (Ctrl+Y)">↪</button>
 
-                <div class="controls-divider"></div>
 
-                <!-- Danger actions -->
-                <button id="clearCanvasBtn" class="btn btn-danger btn-sm" data-tip="Limpar Mapa">🗑 Mapa</button>
-                <button id="clearDrawingsBtn" class="btn btn-danger btn-icon" data-tip="Limpar Desenhos">✂</button>
 
-                <div class="controls-divider"></div>
-
-                <!-- Névoa & Iluminação panel toggle -->
-                <button id="envPanelBtn" class="btn btn-icon btn-env" title="Névoa & Iluminação (F)">🌑</button>
+        
             </div>
         </div>
 
         <div id="feedbackMessage" class="feedback-message hidden"></div>
 
         <!-- ═══ ENV PANEL (Névoa + Iluminação) ═══ -->
-        <div id="envPanel">
-            <div class="env-panel-header">
-                <div class="env-tabs">
-                    <button class="env-tab active" data-tab="fog" id="envTabFog">🌫️ Névoa de Guerra</button>
-                    <button class="env-tab" data-tab="light" id="envTabLight">💡 Iluminação Dinâmica</button>
-                </div>
-                <button id="envPanelClose" title="Fechar">✕</button>
-            </div>
-            <div class="env-panel-body">
-
-                <!-- ── TAB: FOG ─────────────────────────────────────────── -->
-                <div class="env-tab-content" data-content="fog">
-                    <!-- Status + Toggle -->
-                    <div class="env-card">
-                        <div class="env-card-title">Estado da Névoa</div>
-                        <div class="env-row" style="justify-content:space-between;">
-                            <span id="fowStatusPill" class="fow-status-pill off"><span class="pill-dot"></span>DESATIVADA</span>
-                            <div style="display:flex;gap:0.4rem;flex-wrap:wrap;">
-                                <button id="fowToggleBtn" class="btn btn-sm" style="background:linear-gradient(135deg,#5b21b6,#1d4ed8);border:1px solid rgba(167,139,250,0.3);color:#e9d5ff;">👁️ Ligar Névoa</button>
-                                <button id="fowGmRevealBtn" class="btn btn-sm" style="background:rgba(245,158,11,0.2);border:1px solid rgba(245,158,11,0.35);color:#fbbf24;display:none;">👓 Modo GM</button>
-                            </div>
-                        </div>
-                    </div>
-                    <!-- Vision radius -->
-                    <div class="env-card" id="fowRadiusCard" style="display:none;">
-                        <div class="env-card-title">Raio de Visão Global</div>
-                        <div class="env-row">
-                            <span class="env-label">👁 Raio padrão</span>
-                            <input type="range" id="fowVisionSlider" class="env-slider" min="1" max="20" value="6">
-                            <span class="env-val" id="fowVisionLabel">6</span>
-                            <span style="font-size:0.68rem;color:var(--text-muted);">quad.</span>
-                        </div>
-                        <p style="font-size:0.68rem;color:var(--text-muted);margin-top:0.35rem;">O raio individual de cada NPC prevalece sobre este valor.</p>
-                    </div>
-                    <!-- Actions -->
-                    <div class="env-card" id="fowActionsCard" style="display:none;">
-                        <div class="env-card-title">Ações</div>
-                        <div class="env-row" style="gap:0.4rem;">
-                            <button id="fowClearBtn" class="btn btn-ghost btn-sm" style="flex:1;justify-content:center;">🌫 Resetar Exploração</button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- ── TAB: LIGHT ────────────────────────────────────────── -->
-                <div class="env-tab-content hidden" data-content="light">
-                    <!-- Toggle + Status -->
-                    <div class="env-card">
-                        <div class="env-card-title">Iluminação WebGL</div>
-                        <div class="env-row" style="justify-content:space-between;">
-                            <span id="lightStatusPill" class="fow-status-pill off"><span class="pill-dot"></span>DESATIVADA</span>
-                            <button id="glToggleBtn" class="btn btn-sm" style="background:linear-gradient(135deg,#78350f,#92400e);border:1px solid rgba(251,191,36,0.35);color:#fde68a;">💡 Ligar Luzes</button>
-                        </div>
-                    </div>
-                    <!-- Ambiente -->
-                    <div class="env-card" id="glAmbientCard" style="display:none;">
-                        <div class="env-card-title">Luz Ambiente</div>
-                        <div class="env-row" style="margin-bottom:0.4rem;">
-                            <span class="env-label">Intensidade</span>
-                            <input type="range" id="glAmbientIntensity" class="env-slider" min="0" max="100" value="8">
-                            <span class="env-val" id="glAmbientLabel">8%</span>
-                        </div>
-                        <div class="env-row">
-                            <span class="env-label">Cor ambiente</span>
-                            <input type="color" id="glAmbientColor" value="#0a0e1a"
-                                style="width:2.25rem;height:1.75rem;border-radius:0.375rem;border:1px solid var(--border-light);cursor:pointer;">
-                            <div style="display:flex;gap:0.3rem;flex-wrap:wrap;">
-                                <button class="btn btn-ghost btn-sm" style="font-size:0.65rem;" onclick="setPresetAmbient('night')">🌙 Noite</button>
-                                <button class="btn btn-ghost btn-sm" style="font-size:0.65rem;" onclick="setPresetAmbient('dusk')">🌆 Crepúsculo</button>
-                                <button class="btn btn-ghost btn-sm" style="font-size:0.65rem;" onclick="setPresetAmbient('dungeon')">🕯 Masmorra</button>
-                                <button class="btn btn-ghost btn-sm" style="font-size:0.65rem;" onclick="setPresetAmbient('day')">☀️ Dia</button>
-                            </div>
-                        </div>
-                    </div>
-                    <!-- Luzes de tokens (info) -->
-                    <div class="env-card" id="glTokenLightsCard" style="display:none;">
-                        <div class="env-card-title" style="display:flex;align-items:center;justify-content:space-between;">
-                            <span>Luzes dos Tokens</span>
-                            <span id="glTokenLightCount" style="font-size:0.7rem;color:#fbbf24;font-weight:700;">0 ativas</span>
-                        </div>
-                        <div id="glTokenLightList" style="max-height:100px;overflow-y:auto;">
-                            <p style="font-size:0.72rem;color:var(--text-muted);">Configure o raio de luz em cada NPC.</p>
-                        </div>
-                    </div>
-                    <!-- Fontes de luz manuais -->
-                    <div class="env-card" id="glManualLightsCard" style="display:none;">
-                        <div class="env-card-title" style="display:flex;align-items:center;justify-content:space-between;">
-                            <span>Fontes Manuais</span>
-                            <div style="display:flex;gap:0.3rem;align-items:center;">
-                                <button id="toggleLightIconsBtn" class="btn btn-sm" style="font-size:0.68rem;padding:0.15rem 0.4rem;background:rgba(251,191,36,0.12);border:1px solid rgba(251,191,36,0.25);color:#fde68a;" title="Mostrar/ocultar ícones de luz no mapa">👁️ Ícones</button>
-                                <button id="addManualLightBtn" class="btn btn-sm" style="font-size:0.68rem;padding:0.15rem 0.5rem;background:rgba(251,191,36,0.2);border:1px solid rgba(251,191,36,0.3);color:#fde68a;">+ Adicionar</button>
-                            </div>
-                        </div>
-                        <div id="manualLightList"></div>
-                        <p style="font-size:0.68rem;color:var(--text-muted);margin-top:0.35rem;">💡 Clique em uma célula com a ferramenta ativa para posicionar.</p>
-                    </div>
-                </div>
-
-            </div>
+        
         </div>
         <!-- ═══════════════════════════════════════════════════════ -->
     </main>
@@ -1977,6 +2067,8 @@ let glDefaultLightRadius    = 5;
 let glDefaultLightIntensity = 1.0;
 // Manual light sources: [{id, x, y, color, radius, intensity, label, isDragging}]
 let manualLights = [];
+let lightGroups = [];
+let _litCellsDirty = true, _litCellsCache = null;
 let selectedLightToken = null;
 let lightDragOffsetX = 0, lightDragOffsetY = 0;
 let lightTokensVisible = true; // toggle visibility of light token icons on canvas
@@ -2311,7 +2403,7 @@ function toggleLightLock(id) {
     renderManualLightList();
     drawCanvas();
     saveStateToStorage();
-    broadcast({ type: 'gl_manual_lights', manualLights });
+    broadcastLights();
     showFeedback(ml.locked ? '🔒 Luz bloqueada.' : '🔓 Luz desbloqueada.', 'info');
 }
 
@@ -2735,6 +2827,47 @@ function tokenConeParams(token) {
     };
 }
 
+/**
+ * Retorna um Set com chaves "col,row" de células iluminadas por qualquer
+ * fonte de luz ativa (tokens + luzes manuais). Usado para que a névoa não
+ * cubra áreas onde a iluminação GL está brilhando.
+ * Usa distância simples (sem LoS de parede) para manter a performance.
+ */
+function getFowLitCells() {
+    const lit = new Set();
+
+    // Luzes de tokens
+    tokens.forEach(t => {
+        const npc = npcs[t.npcId];
+        const r = npc?.lightRadius || 0;
+        if (r <= 0) return;
+        const cx = t.x + t.widthInGrids / 2;
+        const cy = t.y + t.heightInGrids / 2;
+        for (let c = Math.floor(cx - r); c <= Math.ceil(cx + r); c++) {
+            for (let row = Math.floor(cy - r); row <= Math.ceil(cy + r); row++) {
+                if (Math.hypot(c + 0.5 - cx, row + 0.5 - cy) <= r)
+                    lit.add(`${c},${row}`);
+            }
+        }
+    });
+
+    // Luzes manuais (respeita enabled)
+    manualLights.filter(function(ml){ return isLightEnabled(ml); }).forEach(ml => {
+        const r = ml.radius || 0;
+        if (r <= 0) return;
+        const cx = ml.x + 0.5;
+        const cy = ml.y + 0.5;
+        for (let c = Math.floor(ml.x - r); c <= Math.ceil(ml.x + r); c++) {
+            for (let row = Math.floor(ml.y - r); row <= Math.ceil(ml.y + r); row++) {
+                if (Math.hypot(c + 0.5 - cx, row + 0.5 - cy) <= r)
+                    lit.add(`${c},${row}`);
+            }
+        }
+    });
+
+    return lit;
+}
+
 function drawFow(visibleSet) {
     if (!fowEnabled) return;
     ensureFowCanvas();
@@ -2745,6 +2878,10 @@ function drawFow(visibleSet) {
     const rows = mapSettings.gridRows;
     const renderAsGm = fowGmReveal && (isHost || myRole === null);
 
+    // Quando a iluminação GL está ativa, calcula quais células estão iluminadas
+    // para que a névoa ceda nessas áreas — a luz "fura" a névoa.
+    const litCells = glEnabled ? getFowLitCellsCached() : null;
+
     fc.clearRect(0, 0, fowCanvas.width, fowCanvas.height);
 
     if (renderAsGm) {
@@ -2753,11 +2890,11 @@ function drawFow(visibleSet) {
             for (let r = 0; r < rows; r++) {
                 const key = `${c},${r}`;
                 if (visibleSet.has(key)) continue;          // visível → sem névoa
+                if (litCells && litCells.has(key)) continue; // iluminada pelo GL → sem névoa
                 const explored = fowExplored[key];
                 fc.fillStyle = explored
                     ? 'rgba(0,0,15,0.48)'   // explorado → névoa média
                     : 'rgba(0,0,10,0.80)';  // nunca visto → névoa densa
-                // +1px de sobreposição elimina linhas entre células
                 fc.fillRect(c * cs - 0.5, r * cs - 0.5, cs + 1, cs + 1);
             }
         }
@@ -2768,15 +2905,16 @@ function drawFow(visibleSet) {
         fc.fillStyle = 'rgba(0,0,12,1)';
         fc.fillRect(0, 0, fowCanvas.width, fowCanvas.height);
 
-        // 2. Por célula: limpar se visível, meia-névoa se explorada
+        // 2. Por célula: limpar se visível ou iluminada, meia-névoa se explorada
         for (let c = 0; c < cols; c++) {
             for (let r = 0; r < rows; r++) {
                 const key = `${c},${r}`;
-                if (visibleSet.has(key)) {
-                    // Visível agora → célula limpa (+1px de overlap)
+                const isLit = litCells && litCells.has(key);
+                if (visibleSet.has(key) || isLit) {
+                    // Visível ou iluminada pelo GL → célula limpa
                     fc.clearRect(c * cs - 0.5, r * cs - 0.5, cs + 1, cs + 1);
                 } else if (fowExplored[key]) {
-                    // Explorado mas fora de visão → meia-névoa
+                    // Explorado mas fora de visão e sem luz → meia-névoa
                     fc.clearRect(c * cs, r * cs, cs, cs);
                     fc.fillStyle = 'rgba(0,0,12,0.58)';
                     fc.fillRect(c * cs, r * cs, cs, cs);
@@ -2940,8 +3078,8 @@ function collectLightSources(visibleSet = null) {
         });
     });
 
-    // Manual lights sempre visíveis para todos
-    manualLights.forEach(ml => {
+    // Manual lights (respeita enabled individual e de grupo)
+    manualLights.filter(function(ml){ return isLightEnabled(ml); }).forEach(ml => {
         lights.push({
             x: ml.x + 0.5, y: ml.y + 0.5,
             color: hexToRgb(ml.color || '#ffcc66'),
@@ -3055,6 +3193,68 @@ function setNpcLightPreset(hex) {
 }
 
 // ── Manual Light Management ───────────────────────────────────────────────────
+
+// ─── LUZES: PERFORMANCE + GRUPOS ────────────────────────────────────────────
+function _debounce(fn, ms) { var t; return function() { var a = arguments, ctx = this; clearTimeout(t); t = setTimeout(function(){ fn.apply(ctx, a); }, ms); }; }
+var _debouncedDrawLight = _debounce(function(){ if (glEnabled) drawCanvas(); }, 45);
+var _debouncedSaveLight = _debounce(function(){ saveStateToStorage(); }, 400);
+
+function isLightEnabled(ml) {
+    if (ml.enabled === false) return false;
+    if (ml.groupId) {
+        var g = lightGroups.find(function(x){ return x.id === ml.groupId; });
+        if (g && g.enabled === false) return false;
+    }
+    return true;
+}
+function invalidateLitCells() { _litCellsDirty = true; }
+function getFowLitCellsCached() {
+    if (!_litCellsDirty && _litCellsCache) return _litCellsCache;
+    _litCellsCache = getFowLitCells();
+    _litCellsDirty = false;
+    return _litCellsCache;
+}
+function broadcastLights() {
+    broadcast({ type: 'gl_manual_lights', manualLights: manualLights, lightGroups: lightGroups });
+}
+function addLightGroup() {
+    lightGroups.push({ id: 'grp_' + Date.now(), name: 'Grupo ' + (lightGroups.length + 1), enabled: true });
+    renderManualLightList(); broadcastLights(); saveStateToStorage();
+    showFeedback('Grupo criado!', 'info');
+}
+function deleteLightGroup(id) {
+    manualLights.forEach(function(ml){ if (ml.groupId === id) ml.groupId = null; });
+    lightGroups = lightGroups.filter(function(g){ return g.id !== id; });
+    invalidateLitCells(); renderManualLightList();
+    if (glEnabled) drawCanvas(); broadcastLights(); saveStateToStorage();
+}
+function toggleLightGroup(id) {
+    var g = lightGroups.find(function(x){ return x.id === id; });
+    if (!g) return;
+    g.enabled = !g.enabled;
+    invalidateLitCells(); renderManualLightList();
+    if (glEnabled) drawCanvas(); broadcastLights(); saveStateToStorage();
+}
+function toggleManualLight(id) {
+    var ml = manualLights.find(function(m){ return m.id === id; });
+    if (!ml) return;
+    ml.enabled = (ml.enabled === false) ? true : false;
+    invalidateLitCells(); renderManualLightList();
+    if (glEnabled) drawCanvas(); broadcastLights(); saveStateToStorage();
+}
+function setAllLightsEnabled(val) {
+    manualLights.forEach(function(ml){ ml.enabled = val; });
+    lightGroups.forEach(function(g){ g.enabled = val; });
+    invalidateLitCells(); renderManualLightList();
+    if (glEnabled) drawCanvas(); broadcastLights(); saveStateToStorage();
+}
+function assignLightToGroup(lightId, groupId) {
+    var ml = manualLights.find(function(m){ return m.id === lightId; });
+    if (!ml) return;
+    ml.groupId = groupId || null;
+    renderManualLightList(); broadcastLights(); saveStateToStorage();
+}
+
 function addManualLight() {
     const offset = manualLights.length % 5;
     const light = {
@@ -3066,14 +3266,17 @@ function addManualLight() {
         intensity: 1.0,
         label: 'Tocha ' + (manualLights.length + 1),
         isDragging: false,
-        locked: false
+        locked: false,
+        enabled: true,
+        groupId: null
     };
     manualLights.push(light);
+    invalidateLitCells();
     selectedLightToken = light;
     renderManualLightList();
     drawCanvas();
     saveStateToStorage();
-    broadcast({ type: 'gl_manual_lights', manualLights });
+    broadcastLights();
     showFeedback('\uD83D\uDD25 Luz criada! Use ✕ Mover para arrastá-la.', 'success');
 }
 
@@ -3094,59 +3297,98 @@ function duplicateManualLight(id) {
     renderManualLightList();
     drawCanvas();
     saveStateToStorage();
-    broadcast({type:'gl_manual_lights', manualLights});
+    invalidateLitCells(); broadcastLights();
     showFeedback('Luz duplicada! Mova para a posição.', 'info');
 }
 
 function deleteManualLight(id) {
-    manualLights = manualLights.filter(ml => ml.id !== id);
-    renderManualLightList();
+    manualLights = manualLights.filter(function(ml){ return ml.id !== id; });
+    invalidateLitCells(); renderManualLightList();
     if (glEnabled) drawCanvas();
-    saveStateToStorage();
-    broadcast({ type: 'gl_manual_lights', manualLights });
+    saveStateToStorage(); broadcastLights();
 }
 
 function renderManualLightList() {
-    const list = $('manualLightList');
+    var list = document.getElementById('manualLightList');
     if (!list) return;
-    if (!manualLights.length) {
+    if (!manualLights.length && !lightGroups.length) {
         list.innerHTML = '<p style="font-size:0.72rem;color:var(--text-muted);">Nenhuma fonte manual.</p>';
         return;
     }
     list.innerHTML = '';
-    manualLights.forEach(ml => {
-        const div = document.createElement('div');
-        const isSelML = selectedLightToken && selectedLightToken.id === ml.id;
+
+    function buildLightRow(ml) {
+        var enabled = isLightEnabled(ml);
+        var isSelected = selectedLightToken && selectedLightToken.id === ml.id;
+        var div = document.createElement('div');
         div.className = 'light-item';
-        if (isSelML) div.style.cssText = 'border-color:rgba(253,230,138,0.55);background:rgba(253,230,138,0.06);';
-        div.innerHTML = `
-            <span class="light-item-dot" style="background:${ml.color};color:${ml.color};"></span>
-            <div style="flex:1;min-width:0;">
-                <div style="display:flex;gap:0.3rem;align-items:center;flex-wrap:wrap;">
-                    <input value="${ml.label}" style="background:transparent;border:none;color:var(--text-primary);font-size:0.75rem;font-weight:600;width:80px;outline:none;padding:0;"
-                        onchange="manualLights.find(m=>m.id==='${ml.id}').label=this.value;saveStateToStorage();broadcast({type:'gl_manual_lights',manualLights});">
-                    <input type="color" value="${ml.color}" style="width:1.5rem;height:1.25rem;border-radius:0.2rem;border:none;cursor:pointer;padding:0;"
-                        oninput="manualLights.find(m=>m.id==='${ml.id}').color=this.value;renderManualLightList();if(glEnabled)drawCanvas();saveStateToStorage();broadcast({type:'gl_manual_lights',manualLights});">
-                </div>
-                <div style="display:flex;gap:0.4rem;align-items:center;margin-top:0.2rem;">
-                    <span style="font-size:0.65rem;color:var(--text-muted);">Col:</span>
-                    <input type="number" value="${ml.x}" min="0" max="${mapSettings.gridCols-1}" style="width:3rem;font-size:0.68rem;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);color:var(--text-primary);border-radius:0.25rem;padding:0.1rem 0.3rem;text-align:center;"
-                        oninput="manualLights.find(m=>m.id==='${ml.id}').x=parseInt(this.value)||0;if(glEnabled)drawCanvas();saveStateToStorage();">
-                    <span style="font-size:0.65rem;color:var(--text-muted);">Lin:</span>
-                    <input type="number" value="${ml.y}" min="0" max="${mapSettings.gridRows-1}" style="width:3rem;font-size:0.68rem;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);color:var(--text-primary);border-radius:0.25rem;padding:0.1rem 0.3rem;text-align:center;"
-                        oninput="manualLights.find(m=>m.id==='${ml.id}').y=parseInt(this.value)||0;if(glEnabled)drawCanvas();saveStateToStorage();">
-                    <span style="font-size:0.65rem;color:var(--text-muted);">R:</span>
-                    <input type="number" value="${ml.radius}" min="0.5" max="25" step="0.5" style="width:3rem;font-size:0.68rem;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);color:var(--text-primary);border-radius:0.25rem;padding:0.1rem 0.3rem;text-align:center;"
-                        oninput="manualLights.find(m=>m.id==='${ml.id}').radius=parseFloat(this.value)||3;if(glEnabled)drawCanvas();saveStateToStorage();">
-                </div>
-            </div>
-            <button onclick="focusLightToken('${ml.id}')" style="background:none;border:none;color:rgba(251,191,36,0.5);cursor:pointer;font-size:0.82rem;padding:0.1rem 0.15rem;line-height:1;flex-shrink:0;transition:color 0.15s;" title="Focar câmera" onmouseenter="this.style.color='rgba(251,191,36,1)'" onmouseleave="this.style.color='rgba(251,191,36,0.5)'">&#128065;&#65039;</button>
-            <button onclick="toggleLightLock('${ml.id}')" style="background:none;border:none;cursor:pointer;font-size:0.82rem;padding:0.1rem 0.15rem;line-height:1;flex-shrink:0;transition:opacity 0.15s;opacity:${ml.locked?1:0.4};" title="${ml.locked?'Desbloquear movimento':'Bloquear movimento'}">&#128274;</button>
-            <button onclick="duplicateManualLight('${ml.id}')" style="background:none;border:none;color:rgba(59,130,246,0.6);cursor:pointer;font-size:0.82rem;padding:0.1rem 0.15rem;line-height:1;flex-shrink:0;transition:color 0.15s;" title="Duplicar luz" onmouseenter="this.style.color='rgba(59,130,246,1)'" onmouseleave="this.style.color='rgba(59,130,246,0.6)'">&#10021;</button>
-            <button onclick="deleteManualLight('${ml.id}')" style="background:none;border:none;color:rgba(239,68,68,0.6);cursor:pointer;font-size:1rem;padding:0.1rem;line-height:1;flex-shrink:0;" title="Remover">×</button>
-        `;
-        list.appendChild(div);
-    });
+        if (isSelected) div.style.cssText = 'border-color:rgba(253,230,138,0.55);background:rgba(253,230,138,0.06);';
+        if (!enabled) div.style.opacity = '0.45';
+        var groupSel = '';
+        if (lightGroups.length) {
+            var opts = '<option value="">Sem grupo</option>';
+            for (var gi = 0; gi < lightGroups.length; gi++) {
+                var gg = lightGroups[gi];
+                opts += '<option value="' + gg.id + '"' + (gg.id === ml.groupId ? ' selected' : '') + '>' + gg.name.replace(/</g,'&lt;') + '</option>';
+            }
+            groupSel = '<select style="font-size:0.62rem;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);color:var(--text-muted);border-radius:0.25rem;padding:0.1rem 0.2rem;max-width:72px;" onchange="assignLightToGroup(\'' + ml.id + '\',this.value||null)">' + opts + '</select>';
+        }
+        div.innerHTML =
+            '<span class="light-item-dot" style="background:' + (enabled ? ml.color : '#555') + ';color:' + ml.color + ';"></span>' +
+            '<div style="flex:1;min-width:0;">' +
+              '<div style="display:flex;gap:0.3rem;align-items:center;flex-wrap:wrap;">' +
+                '<input value="' + ml.label.replace(/"/g,'&quot;') + '" style="background:transparent;border:none;color:var(--text-primary);font-size:0.75rem;font-weight:600;width:80px;outline:none;padding:0;" onchange="(function(m,v){m.label=v;_debouncedSaveLight();broadcastLights();})(manualLights.find(function(x){return x.id===\'' + ml.id + '\';}),this.value)">' +
+                '<input type="color" value="' + ml.color + '" style="width:1.5rem;height:1.25rem;border-radius:0.2rem;border:none;cursor:pointer;padding:0;" oninput="(function(m,v){m.color=v;renderManualLightList();if(glEnabled)drawCanvas();_debouncedSaveLight();broadcastLights();})(manualLights.find(function(x){return x.id===\'' + ml.id + '\';}),this.value)">' +
+                groupSel +
+              '</div>' +
+              '<div style="display:flex;gap:0.4rem;align-items:center;margin-top:0.2rem;">' +
+                '<span style="font-size:0.65rem;color:var(--text-muted);">Col:</span>' +
+                '<input type="number" value="' + ml.x + '" min="0" max="' + (mapSettings.gridCols-1) + '" style="width:3rem;font-size:0.68rem;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);color:var(--text-primary);border-radius:0.25rem;padding:0.1rem 0.3rem;text-align:center;" oninput="(function(m,v){m.x=parseInt(v)||0;invalidateLitCells();if(glEnabled)_debouncedDrawLight();_debouncedSaveLight();})(manualLights.find(function(x){return x.id===\'' + ml.id + '\';}),this.value)">' +
+                '<span style="font-size:0.65rem;color:var(--text-muted);">Lin:</span>' +
+                '<input type="number" value="' + ml.y + '" min="0" max="' + (mapSettings.gridRows-1) + '" style="width:3rem;font-size:0.68rem;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);color:var(--text-primary);border-radius:0.25rem;padding:0.1rem 0.3rem;text-align:center;" oninput="(function(m,v){m.y=parseInt(v)||0;invalidateLitCells();if(glEnabled)_debouncedDrawLight();_debouncedSaveLight();})(manualLights.find(function(x){return x.id===\'' + ml.id + '\';}),this.value)">' +
+                '<span style="font-size:0.65rem;color:var(--text-muted);">R:</span>' +
+                '<input type="number" value="' + ml.radius + '" min="0.5" max="25" step="0.5" style="width:3rem;font-size:0.68rem;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);color:var(--text-primary);border-radius:0.25rem;padding:0.1rem 0.3rem;text-align:center;" oninput="(function(m,v){m.radius=parseFloat(v)||3;invalidateLitCells();if(glEnabled)_debouncedDrawLight();_debouncedSaveLight();})(manualLights.find(function(x){return x.id===\'' + ml.id + '\';}),this.value)">' +
+              '</div>' +
+            '</div>' +
+            '<button onclick="toggleManualLight(\'' + ml.id + '\')" style="background:none;border:none;cursor:pointer;font-size:0.9rem;padding:0.1rem 0.15rem;line-height:1;flex-shrink:0;" title="' + (enabled ? 'Apagar' : 'Acender') + ' luz">' + (enabled ? '&#128161;' : '&#9711;') + '</button>' +
+            '<button onclick="focusLightToken(\'' + ml.id + '\')" style="background:none;border:none;color:rgba(251,191,36,0.5);cursor:pointer;font-size:0.82rem;padding:0.1rem 0.15rem;line-height:1;flex-shrink:0;" title="Focar" onmouseenter="this.style.color=\'rgba(251,191,36,1)\'" onmouseleave="this.style.color=\'rgba(251,191,36,0.5)\'">&#9651;</button>' +
+            '<button onclick="toggleLightLock(\'' + ml.id + '\')" style="background:none;border:none;cursor:pointer;font-size:0.82rem;padding:0.1rem 0.15rem;line-height:1;flex-shrink:0;opacity:' + (ml.locked ? 1 : 0.4) + ';" title="' + (ml.locked ? 'Desbloquear' : 'Bloquear') + '">&#128274;</button>' +
+            '<button onclick="duplicateManualLight(\'' + ml.id + '\')" style="background:none;border:none;color:rgba(59,130,246,0.6);cursor:pointer;font-size:0.82rem;padding:0.1rem 0.15rem;line-height:1;flex-shrink:0;" title="Duplicar">&#10697;</button>' +
+            '<button onclick="deleteManualLight(\'' + ml.id + '\')" style="background:none;border:none;color:rgba(239,68,68,0.6);cursor:pointer;font-size:1rem;padding:0.1rem;line-height:1;flex-shrink:0;" title="Remover">&#10005;</button>';
+        return div;
+    }
+
+    for (var gi = 0; gi < lightGroups.length; gi++) {
+        var g = lightGroups[gi];
+        var groupLights = manualLights.filter(function(ml){ return ml.groupId === g.id; });
+        var grpDiv = document.createElement('div');
+        grpDiv.style.cssText = 'border:1px solid rgba(251,191,36,' + (g.enabled ? '0.22' : '0.1') + ');border-radius:0.4rem;margin-bottom:0.3rem;overflow:hidden;';
+        var hdr = document.createElement('div');
+        hdr.style.cssText = 'display:flex;align-items:center;gap:0.3rem;padding:0.3rem 0.4rem;background:rgba(251,191,36,' + (g.enabled ? '0.1' : '0.03') + ');';
+        hdr.innerHTML =
+            '<button onclick="toggleLightGroup(\'' + g.id + '\')" style="background:none;border:none;cursor:pointer;font-size:0.9rem;padding:0;line-height:1;opacity:' + (g.enabled ? 1 : 0.4) + ';" title="' + (g.enabled ? 'Desligar' : 'Ligar') + ' grupo">' + (g.enabled ? '&#128161;' : '&#9711;') + '</button>' +
+            '<input value="' + g.name.replace(/"/g,'&quot;') + '" style="background:transparent;border:none;color:' + (g.enabled ? '#fde68a' : 'var(--text-muted)') + ';font-size:0.73rem;font-weight:700;flex:1;outline:none;padding:0;min-width:0;" onchange="(function(gg,v){gg.name=v;broadcastLights();saveStateToStorage();})(lightGroups.find(function(x){return x.id===\'' + g.id + '\';}),this.value)">' +
+            '<span style="font-size:0.64rem;color:var(--text-muted);flex-shrink:0;">' + groupLights.length + ' luz' + (groupLights.length !== 1 ? 'es' : '') + '</span>' +
+            '<button onclick="deleteLightGroup(\'' + g.id + '\')" style="background:none;border:none;color:rgba(239,68,68,0.5);cursor:pointer;font-size:0.8rem;padding:0.1rem;line-height:1;" title="Excluir grupo">&#10005;</button>';
+        var body = document.createElement('div');
+        body.style.cssText = 'padding:0.25rem 0.3rem;display:flex;flex-direction:column;gap:0.2rem;';
+        if (groupLights.length) {
+            for (var li = 0; li < groupLights.length; li++) body.appendChild(buildLightRow(groupLights[li]));
+        } else {
+            body.innerHTML = '<p style="font-size:0.67rem;color:var(--text-muted);text-align:center;padding:0.25rem;">Grupo vazio</p>';
+        }
+        grpDiv.appendChild(hdr); grpDiv.appendChild(body); list.appendChild(grpDiv);
+    }
+
+    var ungrouped = manualLights.filter(function(ml){ return !ml.groupId || !lightGroups.find(function(g){ return g.id === ml.groupId; }); });
+    if (ungrouped.length) {
+        if (lightGroups.length) {
+            var lbl = document.createElement('p');
+            lbl.style.cssText = 'font-size:0.64rem;color:var(--text-muted);margin:0.25rem 0 0.15rem;';
+            lbl.textContent = 'Sem grupo'; list.appendChild(lbl);
+        }
+        for (var li = 0; li < ungrouped.length; li++) list.appendChild(buildLightRow(ungrouped[li]));
+    }
 }
 
 /** Update the token-lights info list in the panel */
@@ -3175,27 +3417,48 @@ function renderTokenLightList() {
 }
 
 // ── ENV PANEL UI ──────────────────────────────────────────────────────────────
-let envPanelOpen = false;
-let activeEnvTab = 'fog';
+let envPanelOpen = false; // legacy - unused
+let activeSidebarTab = 'npc';
 let toolsDrawerOpen = false;
 
-function openEnvPanel() {
-    envPanelOpen = true;
-    $('envPanel').classList.add('open');
-    $('envPanelBtn').classList.add('env-active');
-    renderTokenLightList();
-    renderManualLightList();
+function switchSidebarTab(tab) {
+    activeSidebarTab = tab;
+    const titleMap = { npc: 'NPCs', fog: 'Névoa de Guerra', light: 'Iluminação Dinâmica', walls: 'Muros' };
+    const titleEl = $('sidebarPanelTitle');
+    if (titleEl) titleEl.textContent = titleMap[tab] || 'NPCs';
+    // Show/hide scroll wrap for NPC list
+    const npcWrap = $('npcScrollWrap');
+    if (npcWrap) npcWrap.classList.toggle('hidden', tab !== 'npc');
+    // Show/hide env panels
+    const fogPanel   = $('sidebarFogPanel');
+    const lightPanel = $('sidebarLightPanel');
+    const wallsPanel = $('sidebarWallsPanel');
+    if (fogPanel)   fogPanel.classList.toggle('hidden', tab !== 'fog');
+    if (lightPanel) lightPanel.classList.toggle('hidden', tab !== 'light');
+    if (wallsPanel) wallsPanel.classList.toggle('hidden', tab !== 'walls');
+    // When leaving walls tab, reset tool to move
+    if (tab !== 'walls' && (currentTool === 'wall' || currentTool === 'wall-eraser')) {
+        setTool('move');
+    }
+    // Update tab button active state
+    document.querySelectorAll('.sidebar-tab-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.tab === tab);
+    });
+    // Open sidebar if collapsed
+    if (npcSidebar.classList.contains('collapsed')) {
+        npcSidebar.classList.remove('collapsed');
+        updateToggleButtonPositions();
+        setTimeout(resizeCanvasAndDraw, 270);
+    }
+    if (tab === 'light' || tab === 'fog') {
+        renderTokenLightList && renderTokenLightList();
+        renderManualLightList && renderManualLightList();
+    }
 }
-function closeEnvPanel() {
-    envPanelOpen = false;
-    $('envPanel').classList.remove('open');
-    $('envPanelBtn').classList.remove('env-active');
-}
-function switchEnvTab(tab) {
-    activeEnvTab = tab;
-    document.querySelectorAll('.env-tab').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
-    document.querySelectorAll('.env-tab-content').forEach(c => c.classList.toggle('hidden', c.dataset.content !== tab));
-}
+// legacy stubs - kept so any remaining references don't throw
+function openEnvPanel()  { switchSidebarTab('fog'); }
+function closeEnvPanel() { switchSidebarTab('npc'); }
+function switchEnvTab(tab) { switchSidebarTab(tab); }
 
 function updateEnvUI() {
     // FoW pill
@@ -3240,7 +3503,7 @@ function updateEnvUI() {
 
     // Env panel button
     const anyActive = fowEnabled || glEnabled;
-    $('envPanelBtn')?.classList.toggle('env-active', anyActive || envPanelOpen);
+    // sidebar tab buttons have their own active state
 }
 
 // ============================================================
@@ -4131,9 +4394,8 @@ function onPointerUp(e) {
     if (currentTool === 'move' && selectedLightToken?.isDragging) {
         selectedLightToken.isDragging = false;
         saveStateToStorage();
-        broadcast({ type: 'gl_manual_lights', manualLights });
-        renderManualLightList();
-        drawCanvas();
+        invalidateLitCells(); broadcastLights();
+        renderManualLightList(); drawCanvas();
     }
     if (currentTool === 'move' && selectedToken?.isDragging) {
         selectedToken.isDragging = false;
@@ -4312,14 +4574,14 @@ document.addEventListener('keydown', e => {
     else if (ctrl && (e.key.toLowerCase() === 'y' || (e.shiftKey && e.key.toLowerCase() === 'z'))) { e.preventDefault(); redo(); }
     else if (e.key === 'm' || e.key === 'M') setTool('move');
     else if (e.key === 'p' || e.key === 'P') setTool('pan');
-    else if (e.key === 'r' || e.key === 'R') setTool('ruler');
-    else if (e.key === 'c' || e.key === 'C') setTool('cone');
-    else if (e.key === 'd' || e.key === 'D') setTool('draw-line');
-    else if (e.key === 'e' || e.key === 'E') setTool('eraser');
-    else if((e.key==='w'||e.key==='W')&&(isHost||myRole===null))setTool(currentTool==='wall'?'move':'wall');
+    else if (e.key === 'r' || e.key === 'R') { setTool('ruler'); toggleRulerDropdown(false); }
+    else if (e.key === 'c' || e.key === 'C') { setTool('cone'); toggleRulerDropdown(false); }
+    else if (e.key === 'd' || e.key === 'D') { setTool('draw-line'); toggleDrawDropdown(false); }
+    else if (e.key === 'e' || e.key === 'E') { setTool('eraser'); toggleDrawDropdown(false); }
+    else if((e.key==='w'||e.key==='W')&&(isHost||myRole===null)){ switchSidebarTab('walls'); setTool(currentTool==='wall'?'move':'wall'); }
 
     else if (e.key === 'f' || e.key === 'F') {
-        if (envPanelOpen) closeEnvPanel(); else openEnvPanel();
+        switchSidebarTab(activeSidebarTab === 'fog' ? 'npc' : 'fog');
     }
     else if (e.key === '+' || e.key === '=') applyZoom(ZOOM_FACTOR, canvas.width/2, canvas.height/2);
     else if (e.key === '-') applyZoom(1/ZOOM_FACTOR, canvas.width/2, canvas.height/2);
@@ -4363,10 +4625,32 @@ function setTool(tool) {
 
 function updateToolButtonsState(){
     [moveToolBtn,panToolBtn,rulerBtn,coneBtn,drawLineBtn,eraserBtn].forEach(b=>b?.classList.remove('active-tool'));
+    const drawToggle = $('drawToggleBtn');
+    if (drawToggle) drawToggle.classList.remove('active-tool');
+    // Sync rulerToggleBtn active state and icon
+    const rulerToggle = $('rulerToggleBtn');
+    const rulerSub    = $('rulerSubIcon');
+    if (rulerToggle) {
+        const rulerActive = currentTool === 'ruler' || currentTool === 'cone';
+        rulerToggle.classList.toggle('active-tool', rulerActive);
+        if (rulerSub) rulerSub.textContent = currentTool === 'cone' ? '🔺' : '📏';
+        rulerToggle.textContent = '';
+        rulerToggle.appendChild(rulerSub || Object.assign(document.createElement('span'),{id:'rulerSubIcon'}));
+        // Re-set emoji inside toggle
+        if (rulerActive) rulerToggle.innerHTML = (currentTool === 'cone' ? '🔺' : '📏') + '<span id="rulerSubIcon" style="position:absolute;bottom:1px;right:1px;font-size:0.45rem;opacity:0.7;line-height:1;">▼</span>';
+        else             rulerToggle.innerHTML = '📏<span id="rulerSubIcon" style="position:absolute;bottom:1px;right:1px;font-size:0.45rem;opacity:0.7;line-height:1;">▼</span>';
+    }
     if(wallBtn)wallBtn.classList.remove('wall-active');
     const map={move:moveToolBtn,pan:panToolBtn,ruler:rulerBtn,cone:coneBtn,'draw-line':drawLineBtn,eraser:eraserBtn};
     if(map[currentTool])map[currentTool].classList.add('active-tool');
+    // Sync drawToggleBtn icon + active state
+    if (drawToggle) {
+        const drawActive = currentTool === 'draw-line' || currentTool === 'eraser';
+        drawToggle.classList.toggle('active-tool', drawActive);
+        drawToggle.innerHTML = (currentTool === 'eraser' ? '🧹' : '✏️') + '<span style="position:absolute;bottom:1px;right:1px;font-size:0.45rem;opacity:0.7;line-height:1;">▼</span>';
+    }
     if(currentTool==='wall'&&wallBtn)wallBtn.classList.add('wall-active');
+    if(wallEraserBtn)wallEraserBtn.classList.toggle('wall-active', currentTool==='wall-eraser');
 }
 
 function positionTokenControlsMenu() {
@@ -4477,12 +4761,67 @@ toggleNpcDetailBtn.addEventListener('click', () => {
 // ============================================================
 moveToolBtn.addEventListener('click', () => setTool('move'));
 panToolBtn.addEventListener('click', () => setTool(currentTool === 'pan' ? 'move' : 'pan'));
-rulerBtn.addEventListener('click', () => setTool(currentTool === 'ruler' ? 'move' : 'ruler'));
-coneBtn.addEventListener('click', () => setTool(currentTool === 'cone' ? 'move' : 'cone'));
-drawLineBtn.addEventListener('click', () => setTool(currentTool === 'draw-line' ? 'move' : 'draw-line'));
-eraserBtn.addEventListener('click',()=>setTool(currentTool==='eraser'?'move':'eraser'));
-if(wallBtn)       wallBtn.addEventListener('click',()=>setTool(currentTool==='wall'?'move':'wall'));
-if(wallEraserBtn) wallEraserBtn.addEventListener('click',()=>setTool(currentTool==='wall-eraser'?'move':'wall-eraser'));
+// Ruler dropdown logic
+let rulerDropdownOpen = false;
+function toggleRulerDropdown(force) {
+    rulerDropdownOpen = force !== undefined ? force : !rulerDropdownOpen;
+    $('rulerDropdown').classList.toggle('hidden', !rulerDropdownOpen);
+}
+$('rulerToggleBtn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    // If a ruler tool is already active, toggle it off; else open picker
+    if (currentTool === 'ruler' || currentTool === 'cone') {
+        setTool('move');
+        toggleRulerDropdown(false);
+    } else {
+        toggleRulerDropdown();
+    }
+});
+rulerBtn.addEventListener('click', () => {
+    setTool('ruler');
+    toggleRulerDropdown(false);
+});
+coneBtn.addEventListener('click', () => {
+    setTool('cone');
+    toggleRulerDropdown(false);
+});
+// Close dropdown on outside click
+document.addEventListener('click', e => {
+    if (!rulerDropdownOpen) return;
+    const wrap = $('rulerDropdownWrap');
+    if (wrap && !wrap.contains(e.target)) toggleRulerDropdown(false);
+});
+// Draw dropdown logic
+let drawDropdownOpen = false;
+function toggleDrawDropdown(force) {
+    drawDropdownOpen = force !== undefined ? force : !drawDropdownOpen;
+    $('drawDropdown').classList.toggle('hidden', !drawDropdownOpen);
+}
+$('drawToggleBtn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (currentTool === 'draw-line' || currentTool === 'eraser') {
+        setTool('move');
+        toggleDrawDropdown(false);
+    } else {
+        toggleDrawDropdown();
+    }
+});
+drawLineBtn.addEventListener('click', () => {
+    setTool(currentTool === 'draw-line' ? 'move' : 'draw-line');
+    toggleDrawDropdown(false);
+});
+eraserBtn.addEventListener('click', () => {
+    setTool(currentTool === 'eraser' ? 'move' : 'eraser');
+    toggleDrawDropdown(false);
+});
+// Close on outside click
+document.addEventListener('click', e => {
+    if (!drawDropdownOpen) return;
+    const wrap = $('drawDropdownWrap');
+    if (wrap && !wrap.contains(e.target)) toggleDrawDropdown(false);
+});
+if(wallBtn)       wallBtn.addEventListener('click',()=>{ switchSidebarTab('walls'); setTool(currentTool==='wall'?'move':'wall'); });
+if(wallEraserBtn) wallEraserBtn.addEventListener('click',()=>{ switchSidebarTab('walls'); setTool(currentTool==='wall-eraser'?'move':'wall-eraser'); });
 
 
 function applyTokenRotation(deg) {
@@ -5281,7 +5620,8 @@ function handleRemoteMessage(raw, sourceConn) {
 
             case 'gl_manual_lights': {
                 manualLights = msg.manualLights || [];
-                renderManualLightList();
+                lightGroups = msg.lightGroups || [];
+                invalidateLitCells(); renderManualLightList();
                 if (glEnabled) drawCanvas();
                 break;
             }
@@ -5966,17 +6306,18 @@ function applyRoleUI() {
     // true = mestre (host) ou single-player (myRole===null)
     const gm = isHost || myRole === null;
 
-    // Abas de Névoa e Iluminação — ocultar painel inteiro se não for Mestre
-    const envBtn = $('envPanelBtn');
-    if (envBtn) envBtn.style.display = gm ? '' : 'none';
-
-    // Se o painel estiver aberto e não for GM, fechar e ocultar
-    if (!gm) {
-        closeEnvPanel && closeEnvPanel();
+    // Abas de Névoa e Iluminação — ocultar para não-GM
+    const fogTab   = $('sidebarFogTab');
+    const lightTab = $('sidebarLightTab');
+    if (fogTab)   fogTab.style.display   = gm ? '' : 'none';
+    if (lightTab) lightTab.style.display = gm ? '' : 'none';
+    if (!gm && (activeSidebarTab === 'fog' || activeSidebarTab === 'light')) {
+        switchSidebarTab('npc');
     }
 
-    if(wallBtn)       wallBtn.style.display      = gm ? '' : 'none';
-    if(wallEraserBtn) wallEraserBtn.style.display = gm ? '' : 'none';
+    const wallsTab = $('sidebarWallsTab');
+    if (wallsTab) wallsTab.style.display = gm ? '' : 'none';
+    if (!gm && activeSidebarTab === 'walls') switchSidebarTab('npc');
     renderNpcList();
 }
 
@@ -6070,20 +6411,10 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // ── ENV PANEL open / close / tabs ────────────────────────────
-    $('envPanelBtn').addEventListener('click', () => {
-        if (envPanelOpen) closeEnvPanel(); else openEnvPanel();
+    // Sidebar tab buttons
+    document.querySelectorAll('.sidebar-tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => switchSidebarTab(btn.dataset.tab));
     });
-    $('envPanelClose').addEventListener('click', closeEnvPanel);
-    document.querySelectorAll('.env-tab').forEach(btn => {
-        btn.addEventListener('click', () => switchEnvTab(btn.dataset.tab));
-    });
-    // Close panel when clicking outside
-    document.addEventListener('click', e => {
-        if (!envPanelOpen) return;
-        const panel = $('envPanel');
-        const toggler = $('envPanelBtn');
-        if (!panel.contains(e.target) && !toggler.contains(e.target)) closeEnvPanel();
-    }, true);
 
     // ── FOG OF WAR controls ───────────────────────────────────────
     $('fowToggleBtn').addEventListener('click', () => {

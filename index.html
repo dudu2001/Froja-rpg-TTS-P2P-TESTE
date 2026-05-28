@@ -5803,37 +5803,23 @@ function sendFullStateSync(conn) {
 //   PEERJS CONFIG
 // ============================================================
 async function getTurnCredentials() {
-    const res = await fetch('https://turn-creds.eduardogamer2720.workers.dev');
-    if (!res.ok) {
-        throw new Error('Falha ao obter credenciais TURN');
-    }
-    return res.json();
+  const res = await fetch('https://turn-creds.eduardogamer2720.workers.dev/turn-credentials');
+  if (!res.ok) throw new Error('Falha ao obter credenciais TURN');
+  return res.json();
 }
 
 async function makePeerConfig() {
-    const { username, credential } = await getTurnCredentials();
-    return {
-        host:   '0.peerjs.com',
-        port:   443,
-        path:   '/',
-        secure: true,
-        debug:  1,
-        config: {
-            iceServers: [
-                { urls: 'stun:stun.l.google.com:19302' },
-                {
-                    urls: 'turn:147.15.41.60:3478',
-                    username,
-                    credential,
-                },
-                {
-                    urls: 'turn:147.15.41.60:3478?transport=tcp',
-                    username,
-                    credential,
-                },
-            ],
-        },
-    };
+  const turnData = await getTurnCredentials();
+  return {
+    host: '0.peerjs.com',
+    port: 443,
+    path: '/',
+    secure: true,
+    debug: 1,
+    config: {
+      iceServers: turnData.iceServers
+    }
+  };
 }
 
 // ============================================================

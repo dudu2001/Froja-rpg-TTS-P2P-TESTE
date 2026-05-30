@@ -5811,10 +5811,10 @@ async function getTurnCredentials() {
 async function makePeerConfig() {
   const turnData = await getTurnCredentials();
   return {
-    host: 'seuvtt.duckdns.org',
-    port: 9000,
-    path: '/peerjs',
-    secure: false,
+    host: '0.peerjs.com',
+    port: 443,
+    path: '/',
+    secure: true,
     debug: 1,
     config: {
       iceServers: turnData.iceServers
